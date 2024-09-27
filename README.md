@@ -9,3 +9,12 @@
 7. Примак Рад
 8. Савенков Илья
 9. Никаноров Иван
+
+Инструкции по запуску:
+``` bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install flask
+cd src
+flask run
+```
