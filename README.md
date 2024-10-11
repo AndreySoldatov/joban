@@ -10,11 +10,6 @@
 8. Савенков Илья
 9. Никаноров Иван
 
-Инструкции по запуску:
-``` bash
-python3 -m venv .venv
-. .venv/bin/activate
-pip install flask
-cd src
-flask run
-```
+Стэк технологий:
+Фронт: Vite, React, Redux, Typescript, Material UI
+Бэк: Python, Fastapi, Sqlite
