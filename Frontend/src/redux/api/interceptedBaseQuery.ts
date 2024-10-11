@@ -5,7 +5,7 @@ import {
     FetchBaseQueryError,
 } from '@reduxjs/toolkit/query';
 
-const customBaseQuery = fetchBaseQuery({ baseUrl: '/api' });
+const customBaseQuery = fetchBaseQuery({ baseUrl: 'http://127.0.0.1:8000/api' });
 
 export const interceptedBaseQuery: BaseQueryFn<
     string | FetchArgs,
