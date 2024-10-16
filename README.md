@@ -20,4 +20,4 @@
    cd ./joban/Frontend
    npm i
    npm run dev
-3) Открыть в браузере <a href="http://localhost:5173" target="_blank" rel="noopener">http://localhost:5173/</a>
+3) Открыть в браузере http://localhost:5173
