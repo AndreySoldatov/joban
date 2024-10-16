@@ -13,3 +13,11 @@
 Стэк технологий:
 Фронт: Vite, React, Redux, Typescript, Material UI
 Бэк: Python, Fastapi, Sqlite
+
+## Запуск Frontend'a:
+1) Установить [Node.js](https://nodejs.org/en/download/package-manager)
+2) ```
+   cd ./joban/Frontend
+   npm i
+   npm run dev
+3) Открыть в браузере <a href="http://localhost:5173" target="_blank" rel="noopener">http://localhost:5173/</a>
