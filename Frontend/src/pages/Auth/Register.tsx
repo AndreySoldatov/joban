@@ -1,9 +1,8 @@
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { setUser } from '../../redux/slices/auth.slice';
-import { useLoginUserMutation } from '../../redux/api/auth.api';
+import { useSelector } from 'react-redux';
+import { useRegisterUserMutation } from '../../redux/api/auth.api';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { RootState } from '../../redux/store';
 import style from './auth.module.sass';
@@ -11,24 +10,22 @@ import classNames from 'classnames';
 import { Alert, IconButton, TextField } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { LoadingButton } from '@mui/lab';
-import { Bounce, toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 
 interface LoginData {
     login: string;
     password: string;
 }
 
-const Auth: React.FC = () => {
+const Register: React.FC = () => {
     const [
-        loginUser,
+        registerUser,
         {
-            data: loginData,
-            isSuccess: isLoginSuccess,
-            isLoading: isLoginLoading,
-            isError: isLoginError,
-            error: loginError,
+            isSuccess: isRegisterSuccess,
+            isLoading: isRegisterLoading,
+            isError: isRegisterError,
         },
-    ] = useLoginUserMutation();
+    ] = useRegisterUserMutation();
     const {
         register,
         handleSubmit,
@@ -39,31 +36,21 @@ const Auth: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
     const { isAuth } = useSelector((state: RootState) => state.authSlice);
     const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const { state } = useLocation();
-    const notifySuccess = (message?: string) =>
-        toast.success(message || 'Изменения сохранены');
+
+    const notifyError = (message?: string) =>
+        toast.error(message || 'Что-то пошло не так...');
 
     useEffect(() => {
-        if (state) {
-            if (state.isRegisterSuccess)
-                notifySuccess('Вы успешно зарегистрировались');
+        if (isRegisterSuccess) {
+            navigate('/login', { state: { isRegisterSuccess } });
         }
-    }, [state]);
-
-    console.log(state);
-
-    useEffect(() => {
-        if (isLoginSuccess) {
-            dispatch(setUser(loginData));
-            navigate('/dashboard');
-        }
-        if (isLoginError) {
+        if (isRegisterError) {
+            notifyError();
             setError('password', { type: 'focus' }, { shouldFocus: true });
             setError('login', { type: 'focus' }, { shouldFocus: true });
             setError('auth', { type: 'focus' }, { shouldFocus: true });
         }
-    }, [isLoginLoading, isLoginSuccess]);
+    }, [isRegisterError, isRegisterSuccess]);
 
     if (isAuth) {
         return <Navigate to="/dashboard" replace />;
@@ -72,7 +59,7 @@ const Auth: React.FC = () => {
     const onSubmit = async (data: LoginData) => {
         clearErrors('auth');
         const { login, password } = data;
-        if (login && password) await loginUser({ login, password });
+        if (login && password) await registerUser({ login, password });
     };
 
     const handleClickShowPassword = () => setShowPassword((show) => !show);
@@ -84,30 +71,22 @@ const Auth: React.FC = () => {
 
     return (
         <>
-            <ToastContainer
-                position="top-center"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="colored"
-                // transition={Bounce}
-            />
             <div className={style.auth}>
                 <form
                     onSubmit={handleSubmit(onSubmit)}
                     className={classNames(style.auth__form)}
                 >
                     <div>
-                        <h2>Вход в систему</h2>
+                        <h2>Регистрация</h2>
                     </div>
                     <TextField
                         {...register('login', {
                             required: 'Введите логин',
+                            pattern: {
+                                value: /^[a-zA-Z0-9.]+$/,
+                                message:
+                                    'Логин может содержать только латинские буквы, цифры и точку',
+                            },
                         })}
                         label="Логин"
                         id="login"
@@ -152,18 +131,18 @@ const Auth: React.FC = () => {
                     <LoadingButton
                         size="large"
                         type="submit"
-                        loading={isLoginLoading}
+                        loading={isRegisterLoading}
                         variant="outlined"
                         onClick={() => onSubmit()}
-                        disabled={isLoginLoading}
+                        disabled={isRegisterLoading}
                     >
-                        <b>Войти</b>
+                        <b>Зарегистрироваться</b>
                     </LoadingButton>
                 </form>
-                <Link to="/register">Нет аккаунта?</Link>
+                <Link to="/login">Есть аккаунт?</Link>
             </div>
         </>
     );
 };
 
-export default Auth;
+export default Register;

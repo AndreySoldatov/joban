@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useWhoAmIQuery } from './redux/api/auth.api';
 import { resetUser, setUser } from './redux/slices/auth.slice';
+import Register from './pages/Auth/Register';
 
 type WhoAmIState = boolean | typeof skipToken;
 
@@ -61,6 +62,7 @@ const App: React.FC = () => {
                 }
             />
             <Route path="/login" element={<Auth />} />
+            <Route path="/register" element={<Register />} />
             <Route element={<PrivateRoute isAuth={isAuth} />}>
                 <Route path="/dashboard" element={<Dashboard />} />
             </Route>
