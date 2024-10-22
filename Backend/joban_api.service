@@ -1,0 +1,13 @@
+[Unit]
+Description=Joban backend api service
+After=network.target
+
+[Service]
+Type=simple
+User=ross
+WorkingDirectory=/home/ross/Dev/joban/Backend
+ExecStart=/home/ross/Dev/joban/Backend/.venv/bin/python3 /home/ross/Dev/joban/Backend/.venv/bin/fastapi run main.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
