@@ -11,6 +11,10 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { useWhoAmIQuery } from './redux/api/auth.api';
 import { resetUser, setUser } from './redux/slices/auth.slice';
 import Register from './pages/Auth/Register';
+import Layout from './layout/Layout';
+import RedirectRoute from './utils/RedirectRoute';
+import Boards from './pages/Boards/Boards';
+import Board from './pages/Boards/Board';
 
 type WhoAmIState = boolean | typeof skipToken;
 
@@ -64,7 +68,20 @@ const App: React.FC = () => {
             <Route path="/login" element={<Auth />} />
             <Route path="/register" element={<Register />} />
             <Route element={<PrivateRoute isAuth={isAuth} />}>
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path={'/'} element={<Layout />}>
+                    <Route
+                        index
+                        element={
+                            <RedirectRoute
+                                route={'dashboard'}
+                                isAuth={isAuth}
+                            />
+                        }
+                    />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/boards" element={<Boards />} />
+                    <Route path="/boards/:id" element={<Board />} />
+                </Route>
             </Route>
         </Routes>
     );

@@ -1,0 +1,15 @@
+.task
+    margin-bottom: 8px
+    cursor: grab
+    transition: box-shadow 0.3s ease
+    &:hover
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15)
+    &:hover .deleteButton
+        opacity: 1
+    &__body
+        display: flex
+        justify-content: space-between
+        align-items: center
+    .deleteButton
+        opacity: 0
+        transition: opacity 0.2s ease-in-out
