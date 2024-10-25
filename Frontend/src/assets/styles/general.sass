@@ -3,6 +3,10 @@
 @import "libs/normalize"
 @import "components/Spinner"
 
+html
+	font-size: 15px
+	line-height: 22px
+
 body
 	font-family: "Rooftop"
 	background: #F3F5F6
@@ -10,3 +14,47 @@ body
 	margin: 0
 	color: #000
 	word-wrap: anywhere
+
+button
+	word-wrap: normal
+
+img
+	max-width: 100%
+	display: block
+
+h1
+	word-wrap: normal
+
+.container
+	width: 100%
+	margin: 0 auto
+	height: 100%
+	padding: 0 18px
+	max-width: 100%
+
+main.main
+	height: calc( 100vh - 75px )
+
+.content
+	max-width: calc(100% - 220px - 36px)
+	flex: 1
+	display: flex
+	background-color: white
+	border-radius: 12px
+	padding: 18px
+	margin-left: 238px
+	margin-top: 18px
+	margin-right: 18px
+	height: auto
+	overflow-y: auto
+	@media screen and (max-width: 960px)
+		max-width: 100%
+		width: 100%
+
+.wrapper
+	display: flex
+	padding: 18px 0
+	align-items: flex-start
+	height: calc( 100vh - 75px )
+	@media screen and (max-width: 1392px)
+		gap: 18px

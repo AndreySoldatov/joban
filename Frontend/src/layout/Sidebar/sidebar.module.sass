@@ -1,0 +1,81 @@
+.aside
+  width: 220px
+  background-color: #fff
+  min-width: 220px
+  height: calc(100vh - 74px)
+  border-right: 1px solid #00000023
+  padding-bottom: 40px
+  position: fixed
+  top: 75
+  padding-top: 18px
+  padding-right: 18px
+  padding-left: 18px
+  overflow-y: auto
+  scrollbar-width: thin
+  scrollbar-color: #dddddd transparent
+  &::-webkit-scrollbar
+    width: 12px
+  &::-webkit-scrollbar-track
+    background: transparent
+  &::-webkit-scrollbar-thumb
+    background-color: #dddddd
+    border-radius: 20px
+    border: 3px solid transparent
+
+  @media (max-width: 960px)
+    width: 50px
+    min-width: 50px
+  & > div
+    height: 100%
+    display: flex
+    flex-direction: column
+    justify-content: space-between
+    gap: 3px
+.menu
+  display: flex
+  flex-direction: column
+  column-gap: 18px
+  row-gap: 3px
+
+  & > li
+    a
+      display: flex
+      padding: 9px 9px
+      border-radius: 9px
+      color: #000000
+      font-size: 15px
+      align-items: center
+      column-gap: 9px
+      position: relative
+      font-weight: 500
+      & > span
+        &:first-child
+          width: 36px
+          height: 36px
+          display: flex
+          align-items: center
+          justify-content: center
+          border-radius: 12px
+          transform: translateY(2%)
+          background-color: rgba(0, 0, 0, .04)
+        &:not(:first-child)
+          @media (max-width: 960px)
+            display: none
+
+      &[class="disabled"]
+        cursor: not-allowed
+        & > span
+          svg
+            fill: #aaa
+      &[class="active"]
+        background-color: #00000008
+        color: #1976d2
+        & > span
+          &:first-child
+            background-color: rgb(244, 249, 253)
+          svg
+            fill: #1976d2
+      &:not([class="active"]):hover
+        background-color: #00000010
+
+
