@@ -1,20 +1,22 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { useRegisterUserMutation } from '../../redux/api/auth.api';
-import { useForm } from 'react-hook-form';
+import { SubmitHandler, useForm } from 'react-hook-form';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { RootState } from '../../redux/store';
 import style from './auth.module.sass';
 import classNames from 'classnames';
-import { Alert, IconButton, TextField } from '@mui/material';
+import { IconButton, TextField } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { LoadingButton } from '@mui/lab';
 import { toast } from 'react-toastify';
 
-interface LoginData {
+interface RegisterData {
     login: string;
     password: string;
+    firstName: string;
+    secondName: string;
 }
 
 const Register: React.FC = () => {
@@ -29,10 +31,8 @@ const Register: React.FC = () => {
     const {
         register,
         handleSubmit,
-        setError,
         formState: { errors },
-        clearErrors,
-    } = useForm();
+    } = useForm<RegisterData>();
     const [showPassword, setShowPassword] = useState(false);
     const { isAuth } = useSelector((state: RootState) => state.authSlice);
     const navigate = useNavigate();
@@ -46,9 +46,6 @@ const Register: React.FC = () => {
         }
         if (isRegisterError) {
             notifyError();
-            setError('password', { type: 'focus' }, { shouldFocus: true });
-            setError('login', { type: 'focus' }, { shouldFocus: true });
-            setError('auth', { type: 'focus' }, { shouldFocus: true });
         }
     }, [isRegisterError, isRegisterSuccess]);
 
@@ -56,10 +53,12 @@ const Register: React.FC = () => {
         return <Navigate to="/dashboard" replace />;
     }
 
-    const onSubmit = async (data: LoginData) => {
-        clearErrors('auth');
-        const { login, password } = data;
-        if (login && password) await registerUser({ login, password });
+    const onSubmit: SubmitHandler<RegisterData> = async (
+        data: RegisterData
+    ) => {
+        const { login, password, firstName, secondName } = data;
+        if (login && password && firstName && secondName)
+            await registerUser({ login, password, firstName, secondName });
     };
 
     const handleClickShowPassword = () => setShowPassword((show) => !show);
@@ -80,6 +79,46 @@ const Register: React.FC = () => {
                         <h2>Регистрация</h2>
                     </div>
                     <TextField
+                        {...register('firstName', {
+                            required: 'Введите имя',
+                            pattern: {
+                                value: /^[а-яА-Я]+$/,
+                                message:
+                                    'Имя может содержать только буквы русского алфовита',
+                            },
+                        })}
+                        label="Имя"
+                        id="firstName"
+                        variant="outlined"
+                        type="text"
+                        error={!!errors.firstName}
+                        helperText={
+                            errors.firstName &&
+                            typeof errors.firstName?.message === 'string' &&
+                            errors.firstName?.message
+                        }
+                    />
+                    <TextField
+                        {...register('secondName', {
+                            required: 'Введите фамилию',
+                            pattern: {
+                                value: /^[а-яА-Я]+$/,
+                                message:
+                                    'Фамилия может содержать только буквы русского алфовита',
+                            },
+                        })}
+                        label="Фамилия"
+                        id="secondName"
+                        variant="outlined"
+                        type="text"
+                        error={!!errors.secondName}
+                        helperText={
+                            errors.secondName &&
+                            typeof errors.secondName?.message === 'string' &&
+                            errors.secondName?.message
+                        }
+                    />
+                    <TextField
                         {...register('login', {
                             required: 'Введите логин',
                             pattern: {
@@ -93,7 +132,11 @@ const Register: React.FC = () => {
                         variant="outlined"
                         type="text"
                         error={!!errors.login}
-                        helperText={errors.login ? errors.login.message : false}
+                        helperText={
+                            errors.login?.message &&
+                            typeof errors.login?.message === 'string' &&
+                            errors.login?.message
+                        }
                     />
                     <TextField
                         {...register('password', {
@@ -105,7 +148,9 @@ const Register: React.FC = () => {
                         type={showPassword ? 'text' : 'password'}
                         error={!!errors.password}
                         helperText={
-                            errors.password ? errors.password.message : false
+                            errors.password?.message &&
+                            typeof errors.password?.message === 'string' &&
+                            errors.password?.message
                         }
                         InputProps={{
                             endAdornment: (
@@ -123,17 +168,11 @@ const Register: React.FC = () => {
                             ),
                         }}
                     />
-                    {errors.auth && (
-                        <Alert variant="filled" severity="error">
-                            {errors.auth.message}
-                        </Alert>
-                    )}
                     <LoadingButton
                         size="large"
                         type="submit"
                         loading={isRegisterLoading}
                         variant="outlined"
-                        onClick={() => onSubmit()}
                         disabled={isRegisterLoading}
                     >
                         <b>Зарегистрироваться</b>

@@ -2,7 +2,7 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setUser } from '../../redux/slices/auth.slice';
 import { useLoginUserMutation } from '../../redux/api/auth.api';
-import { useForm } from 'react-hook-form';
+import { SubmitHandler, useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { RootState } from '../../redux/store';
@@ -11,11 +11,12 @@ import classNames from 'classnames';
 import { Alert, IconButton, TextField } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { LoadingButton } from '@mui/lab';
-import { Bounce, toast, ToastContainer } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 
 interface LoginData {
     login: string;
     password: string;
+    auth: string;
 }
 
 const Auth: React.FC = () => {
@@ -35,7 +36,7 @@ const Auth: React.FC = () => {
         setError,
         formState: { errors },
         clearErrors,
-    } = useForm();
+    } = useForm<LoginData>();
     const [showPassword, setShowPassword] = useState(false);
     const { isAuth } = useSelector((state: RootState) => state.authSlice);
     const navigate = useNavigate();
@@ -50,8 +51,6 @@ const Auth: React.FC = () => {
                 notifySuccess('Вы успешно зарегистрировались');
         }
     }, [state]);
-
-    console.log(state);
 
     useEffect(() => {
         if (isLoginSuccess) {
@@ -69,8 +68,7 @@ const Auth: React.FC = () => {
         return <Navigate to="/dashboard" replace />;
     }
 
-    const onSubmit = async (data: LoginData) => {
-        clearErrors('auth');
+    const onSubmit: SubmitHandler<LoginData> = async (data) => {
         const { login, password } = data;
         if (login && password) await loginUser({ login, password });
     };
@@ -95,7 +93,6 @@ const Auth: React.FC = () => {
                 draggable
                 pauseOnHover
                 theme="colored"
-                // transition={Bounce}
             />
             <div className={style.auth}>
                 <form
@@ -114,7 +111,11 @@ const Auth: React.FC = () => {
                         variant="outlined"
                         type="text"
                         error={!!errors.login}
-                        helperText={errors.login ? errors.login.message : false}
+                        helperText={
+                            errors.login?.message &&
+                            typeof errors.login?.message === 'string' &&
+                            errors.login?.message
+                        }
                     />
                     <TextField
                         {...register('password', {
@@ -126,7 +127,9 @@ const Auth: React.FC = () => {
                         type={showPassword ? 'text' : 'password'}
                         error={!!errors.password}
                         helperText={
-                            errors.password ? errors.password.message : false
+                            errors.password?.message &&
+                            typeof errors.password?.message === 'string' &&
+                            errors.password?.message
                         }
                         InputProps={{
                             endAdornment: (
@@ -146,15 +149,17 @@ const Auth: React.FC = () => {
                     />
                     {errors.auth && (
                         <Alert variant="filled" severity="error">
-                            {errors.auth.message}
+                            {loginError && 'data' in loginError
+                                ? String(loginError.data)
+                                : 'Произошла ошибка'}
                         </Alert>
                     )}
                     <LoadingButton
                         size="large"
                         type="submit"
                         loading={isLoginLoading}
+                        onClick={() => clearErrors('auth')}
                         variant="outlined"
-                        onClick={() => onSubmit()}
                         disabled={isLoginLoading}
                     >
                         <b>Войти</b>

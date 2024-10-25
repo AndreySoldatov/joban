@@ -5,7 +5,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { PrivateRoute } from './utils/PrivateRoute';
 import Auth from './pages/Auth/Auth';
 import Dashboard from './pages/Dashboard/Dashboard';
-import Spinner from './components/Spinner/Spinner';
+// import Spinner from './components/Spinner/Spinner';
 import { useEffect, useState } from 'react';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { useWhoAmIQuery } from './redux/api/auth.api';
@@ -20,9 +20,10 @@ type WhoAmIState = boolean | typeof skipToken;
 
 const App: React.FC = () => {
     const dispatch = useDispatch();
-    const { isAuth, isWhoAmIChecked } = useSelector(
-        (state: RootState) => state.authSlice
-    );
+    // const { isAuth, isWhoAmIChecked } = useSelector(
+    //     (state: RootState) => state.authSlice
+    // );
+    const { isAuth } = useSelector((state: RootState) => state.authSlice);
     const [state, setState] = useState<{ whoAmI: WhoAmIState }>({
         whoAmI: skipToken,
     });
