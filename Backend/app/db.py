@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from fastapi import Depends
+from sqlmodel import Session, SQLModel, create_engine
 
 slqite_db_name = "joban-data.db"
 sqlite_url = f"sqlite:///{slqite_db_name}"
@@ -17,10 +17,3 @@ def get_session():
         yield session
 
 SessionDep = Annotated[Session, Depends(get_session)]
-
-class User(SQLModel, table=True):
-    id: int = Field(primary_key=True)
-    first_name: str = Field(max_length=20)
-    last_name: str = Field(max_length=30)
-    login: str = Field(max_length=20, index=True)
-    password: str = Field(max_length=16)
