@@ -34,7 +34,12 @@ async def api():
     return "Hello API!"
 
 @app.post("/api/auth/register", status_code=201)
-async def login(user: User, session: SessionDep):
+async def register(user: User, session: SessionDep):
+    print(user)
+    query = select(User).where(User.login == user.login)
+    db_zapr = session.exec(query).first() #select предполагает возвращение неск. строчек. когда пишем фёст - берём 1 элемент массива
+    if db_zapr:
+        return PlainTextResponse("User already exists", status_code=409)
     session.add(user)
     session.commit()
     session.refresh(user)
