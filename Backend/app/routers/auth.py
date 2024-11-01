@@ -1,10 +1,14 @@
 from typing import Annotated
 from app.routers.auth_db import User
 from app.db import SessionDep
+from pydantic import BaseModel
 
 from sqlmodel import select
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import APIRouter, HTTPException, Depends
+
+class DisplayName(BaseModel):
+    display_name: str
 
 router = APIRouter(prefix="/auth")
 
@@ -34,15 +38,11 @@ login_responses = {
     "401": {"description": "Invalid Credentials"}
 }
 @router.post("/login", status_code=200, responses=login_responses)
-async def login(user: User, session: SessionDep) -> dict:
+async def login(user: User, session: SessionDep) -> DisplayName:
     query = select(User).where(User.login == user.login)
     db_user = session.exec(query).first()
     if not db_user:
         raise HTTPException(detail="User not found", status_code=401)
     if user.password != db_user.password:
         raise HTTPException(detail="Wrong password", status_code=401)
-    displayName = db_user.first_name + " " + db_user.last_name
-    response_data = {
-        "displayName": displayName
-    }
-    return response_data
+    return {"display_name": db_user.first_name + " " + db_user.last_name}
