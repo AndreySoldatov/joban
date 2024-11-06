@@ -108,3 +108,11 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
     
     response.set_cookie(key="DxpAccessToken", value=token)
     return {"display_name": db_user.first_name + " " + db_user.last_name }
+
+@router.post("/logout", status_code=200, dependencies=[Depends(check_token)])
+async def logout(cookies: Annotated[Cookies, Cookie()], response: Response):
+    if cookies.id_token in tokens:
+        tokens.remove(cookies.id_token)
+    response.set_cookie(key="DxpAccessToken", value="")
+    return "logout"
+
