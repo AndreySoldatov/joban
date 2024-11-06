@@ -42,7 +42,7 @@ const Header: React.FC = () => {
                         className={classes.header__logo}
                         onClick={() => navigate('/dashboard')}
                     >
-                        <Icon name={'logo'} size={48} />
+                        <Icon name={'logo'} size={60} height={48} />
                     </Box>
                     <Box
                         sx={{

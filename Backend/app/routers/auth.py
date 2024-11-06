@@ -1,13 +1,16 @@
 from typing import Annotated
-
 from app.routers.auth_db import User
 from app.db import SessionDep
+from pydantic import BaseModel
 
 from sqlmodel import select
 from fastapi import APIRouter, HTTPException, Depends, Response, Cookie
 from pydantic import BaseModel, Field
 from datetime import datetime, timedelta
 import codecs
+
+class DisplayName(BaseModel):
+    display_name: str
 
 router = APIRouter(prefix="/auth")
 
