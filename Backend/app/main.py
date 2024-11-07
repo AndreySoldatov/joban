@@ -5,6 +5,7 @@ from app.db import create_db_and_tables
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import auth
+from app.routers import boards
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -13,6 +14,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(auth.router)
+app.include_router(boards.router)
 
 origins = [
     "http://localhost:5173",
