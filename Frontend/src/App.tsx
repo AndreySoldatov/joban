@@ -21,10 +21,10 @@ type WhoAmIState = boolean | typeof skipToken;
 
 const App: React.FC = () => {
     const dispatch = useDispatch();
-    const { isAuth, isWhoAmIChecked } = useSelector(
-        (state: RootState) => state.authSlice
-    );
-    // const { isAuth } = useSelector((state: RootState) => state.authSlice);
+    // const { isAuth, isWhoAmIChecked } = useSelector(
+    //     (state: RootState) => state.authSlice
+    // );
+    const { isAuth } = useSelector((state: RootState) => state.authSlice);
     const [state, setState] = useState<{ whoAmI: WhoAmIState }>({
         whoAmI: skipToken,
     });
@@ -51,9 +51,9 @@ const App: React.FC = () => {
         if (isWhoAmISuccess) dispatch(setUser(whoAmIData));
     }, [isWhoAmIError, isWhoAmISuccess]);
 
-    if (!isWhoAmIChecked) {
-        return <Spinner />;
-    }
+    // if (!isWhoAmIChecked) {
+    //     return <Spinner />;
+    // }
 
     return (
         <Routes>

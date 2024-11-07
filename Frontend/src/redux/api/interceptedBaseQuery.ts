@@ -6,7 +6,7 @@ import {
 } from '@reduxjs/toolkit/query';
 
 const customBaseQuery = fetchBaseQuery({
-    baseUrl: 'http://194.58.126.172:8000/api',
+    baseUrl: 'http://194.58.126.172:8000',
 });
 
 export const interceptedBaseQuery: BaseQueryFn<

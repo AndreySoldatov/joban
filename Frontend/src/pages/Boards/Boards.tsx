@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import classes from './styles/Boards.module.sass';
-import { Box, IconButton } from '@mui/material';
+import { Box, IconButton, Typography } from '@mui/material';
 import { AddOutlined } from '@mui/icons-material';
 import { useGetBoardsQuery } from '../../redux/api/boards.api';
 import Spinner from '../../components/Spinner/Spinner';
+import oops from '../../assets/images/oops.svg';
 
 const Boards: React.FC = () => {
     const {
@@ -40,7 +41,21 @@ const Boards: React.FC = () => {
                     <Spinner />
                 </Box>
             )}
-            {isBoardsError && <p>Что-то пошло не так... Попробуйте позже</p>}
+            {isBoardsError && (
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    <img src={oops} height={256} />
+                    <Typography variant="h5" sx={{ mt: 5 }} color="primary">
+                        Что-то пошло не так... Попробуйте позже
+                    </Typography>
+                </Box>
+            )}
             {isBoardsSuccess && (
                 <Box
                     sx={{
