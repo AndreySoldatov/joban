@@ -1,24 +1,24 @@
 from typing import Annotated
 from app.routers.auth_db import User
 from app.db import SessionDep
-from pydantic import BaseModel
 
 from sqlmodel import select
 from fastapi import APIRouter, HTTPException, Depends, Response, Cookie
-from pydantic import BaseModel, Field
+from pydantic import Field
 from datetime import datetime, timedelta
 from app.routers.auth_utils import gen_salt
+from app.dependencies import RestRequestModel
 import codecs
 import hashlib
 
-class DisplayName(BaseModel):
+class DisplayName(RestRequestModel):
     display_name: str
 
 router = APIRouter(prefix="/auth")
 
 tokens = []
 
-class Cookies(BaseModel):
+class Cookies(RestRequestModel):
     id_token: str = Field(validation_alias="DxpAccessToken")
 
 async def check_token(cookies: Annotated[Cookies, Cookie()]):
@@ -42,7 +42,7 @@ async def whoami(session: SessionDep, cookies: Annotated[Cookies, Cookie()]):
     db_user = session.exec(query).first()
     return {"display_name": db_user.first_name + " " + db_user.last_name }
 
-class UserRegisterRequest(BaseModel):
+class UserRegisterRequest(RestRequestModel):
     first_name: str = Field(max_length=20)
     last_name: str = Field(max_length=30)
     login: str = Field(max_length=20, index=True)
@@ -80,11 +80,11 @@ def create_token(user: User) -> str:
     exp_time = datetime.now() + timedelta(hours=1)
     return (user.login + "*" + exp_time.isoformat()).encode('utf-8').hex()
 
-class UserLoginRequest(BaseModel):
+class UserLoginRequest(RestRequestModel):
     login: str
     password: str
 
-class DisplayName(BaseModel):
+class DisplayName(RestRequestModel):
     display_name: str
 
 login_responses = {
