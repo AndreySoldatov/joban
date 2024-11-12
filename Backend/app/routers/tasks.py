@@ -9,8 +9,6 @@ from typing import List
 
 router = APIRouter()
 
-# /{board_id}/{column_id}/{task_id}
-
 create_task_responses = {
     "200": {"description": "Task created successfully"},
 }
@@ -24,4 +22,13 @@ async def create_task(board_id: int, col_id: int, task: Task, session: SessionDe
     session.add(task)
     session.commit()
     session.refresh(task)
+    return task
+
+get_task_responses = {
+    "200": {"description": "Task list received"},
+}
+@router.get("/boards/{board_id}/{col_id}/get_tasks_list", status_code=200, responses=create_task_responses)
+async def get_tasks_list(session: SessionDep) -> List[Task]:
+    query = select(Task)
+    task = session.exec(query).all()
     return task

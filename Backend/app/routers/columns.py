@@ -22,3 +22,11 @@ async def create_column(board_id: int, column: Column, session: SessionDep) -> C
     session.refresh(column)
     return column
 
+get_columns_list_responses = {
+    "200": {"description": "Columns list received"}, 
+}
+@router.get("/boards/{board_id}/get_columns_list", status_code=200, responses=create_columns_responses)
+async def get_columns_list(session: SessionDep) -> List[Column]:
+    query = select(Column)
+    columns = session.exec(query).all()
+    return columns
