@@ -5,6 +5,8 @@ from app.routers.columns_db import Column
 from app.db import SessionDep
 from typing import List
 
+from sqlalchemy import delete
+
 router = APIRouter()
 
 create_columns_responses = {
@@ -30,3 +32,27 @@ async def get_columns_list(session: SessionDep) -> List[Column]:
     query = select(Column)
     columns = session.exec(query).all()
     return columns
+
+@router.delete("/boards/{board_id}/delete_all_columns", status_code=204)
+async def delete_all_columns_by_boards(board_id: int, session: SessionDep) -> None:
+    query = delete(Column).where(Column.board_id == board_id)
+    result = session.execute(query)
+    session.commit()
+    
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="No tasks found for the given column")
+    
+
+@router.delete("/boards/{board_id}/{col_id}/delete_column", status_code=204)
+async def delete_task_by_id(col_id: int, session: SessionDep) -> None:
+    query = select(Column).where(Column.id == col_id)
+    task = session.exec(query).first()
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Column not found")
+
+    delete_query = delete(Column).where(Column.id == col_id)
+    session.execute(delete_query)
+    session.commit()
+
+    return {"detail": f"Column '{task.title}' has been deleted successfully."}

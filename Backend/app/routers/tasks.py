@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from sqlmodel import select
+from sqlalchemy import delete
+
 from app.db import SessionDep
 from app.routers.tasks_db import Task
 from app.routers.columns_db import Column
@@ -32,3 +34,27 @@ async def get_tasks_list(session: SessionDep) -> List[Task]:
     query = select(Task)
     task = session.exec(query).all()
     return task
+
+@router.delete("/boards/{board_id}/{col_id}/delete_all_tasks", status_code=204)
+async def delete_all_tasks_by_column(col_id: int, session: SessionDep) -> None:
+    query = delete(Task).where(Task.col_id == col_id)
+    result = session.execute(query)
+    session.commit()
+    
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="No tasks found for the given column")
+    
+
+@router.delete("/boards/{board_id}/{col_id}/{task_id}/delete_task", status_code=204)
+async def delete_task_by_id(task_id: int, session: SessionDep) -> None:
+    query = select(Task).where(Task.id == task_id)
+    task = session.exec(query).first()
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    delete_query = delete(Task).where(Task.id == task_id)
+    session.execute(delete_query)
+    session.commit()
+
+    return {"detail": f"Task '{task.title}' has been deleted successfully."}
