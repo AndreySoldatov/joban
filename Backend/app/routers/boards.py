@@ -9,7 +9,7 @@ router = APIRouter(prefix="/boards")
 create_boards_responses = {
     "200": {"description": "Board create"}, 
 }
-@router.post("/create_board", status_code=200, responses=create_boards_responses)
+@router.post("/new", status_code=200, responses=create_boards_responses)
 async def create_board(board: Board, session: SessionDep) -> Board:
     query = select(Board).where(Board.title == board.title)
     db_board = session.exec(query).first()
@@ -21,7 +21,7 @@ async def create_board(board: Board, session: SessionDep) -> Board:
 get_boards_list_responses = {
     "200": {"description": "Boards list received"}, 
 }
-@router.get("/get_boards_list", status_code=200, responses=get_boards_list_responses)
+@router.get("", status_code=200, responses=get_boards_list_responses)
 async def get_boards_list(session: SessionDep) -> List[Board]:
     query = select(Board)
     boards = session.exec(query).all()
@@ -31,6 +31,8 @@ get_board_responses = {
     "200": {"description": "Board received"}, 
     "404": {"description": "Board not found"}, 
 }
+
+#TODO: внутри таблицы сразу должны быть и столбцы, и таски
 @router.get("/{board_id}", status_code=200, responses=get_board_responses)
 async def get_board(board_id: int, session: SessionDep) -> Board:
     query = select(Board).where(Board.id == board_id)
