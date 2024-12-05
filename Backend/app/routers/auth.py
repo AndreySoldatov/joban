@@ -5,16 +5,11 @@ from app.db import SessionDep
 from sqlmodel import select
 from fastapi import APIRouter, HTTPException, Depends, Response, Cookie
 from pydantic import Field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.routers.auth_utils import gen_salt
 from app.dependencies import RestRequestModel
 import codecs
 import hashlib
-
-
-class DisplayName(RestRequestModel):
-    display_name: str
-
 
 router = APIRouter(prefix="/auth")
 
@@ -91,7 +86,7 @@ async def register(user: UserRegisterRequest, session: SessionDep) -> User:
 
 
 def create_token(user: User) -> str:
-    exp_time = datetime.now() + timedelta(hours=1)
+    exp_time = datetime.now(timezone.utc) + timedelta(hours=1)
     return (user.login + "*" + exp_time.isoformat()).encode('utf-8').hex()
 
 
