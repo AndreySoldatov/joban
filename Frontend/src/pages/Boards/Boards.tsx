@@ -67,9 +67,8 @@ const Boards: React.FC = () => {
                 >
                     {boards.length > 0 ? (
                         boards.map((board) => (
-                            <div className={classes.container}>
+                            <div className={classes.container} key={board.id}>
                                 <Link
-                                    key={board.id}
                                     className={classes.board_link}
                                     to={`/boards/${board.id}`}
                                 >

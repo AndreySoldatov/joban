@@ -1,30 +1,29 @@
-import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from './redux/store';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { PrivateRoute } from './utils/PrivateRoute';
-import Auth from './pages/Auth/Auth';
-import Dashboard from './pages/Dashboard/Dashboard';
-import { useEffect, useState } from 'react';
-import { skipToken } from '@reduxjs/toolkit/query';
-import { useWhoAmIQuery } from './redux/api/auth.api';
-import { resetUser, setUser } from './redux/slices/auth.slice';
-import Register from './pages/Auth/Register';
-import Layout from './layout/Layout';
-import RedirectRoute from './utils/RedirectRoute';
-import Boards from './pages/Boards/Boards';
-import Board from './pages/Boards/Board';
-import BoardNew from './pages/Boards/BoardNew';
-import Spinner from './components/Spinner/Spinner';
+import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "./redux/store";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { PrivateRoute } from "./utils/PrivateRoute";
+import Auth from "./pages/Auth/Auth";
+import Dashboard from "./pages/Dashboard/Dashboard";
+import { useEffect, useState } from "react";
+import { skipToken } from "@reduxjs/toolkit/query";
+import { useWhoAmIQuery } from "./redux/api/auth.api";
+import { resetUser, setUser } from "./redux/slices/auth.slice";
+import Register from "./pages/Auth/Register";
+import Layout from "./layout/Layout";
+import RedirectRoute from "./utils/RedirectRoute";
+import Boards from "./pages/Boards/Boards";
+import Board from "./pages/Boards/Board";
+import BoardNew from "./pages/Boards/BoardNew";
+import Spinner from "./components/Spinner/Spinner";
 
 type WhoAmIState = boolean | typeof skipToken;
 
 const App: React.FC = () => {
     const dispatch = useDispatch();
-    // const { isAuth, isWhoAmIChecked } = useSelector(
-    //     (state: RootState) => state.authSlice
-    // );
-    const { isAuth } = useSelector((state: RootState) => state.authSlice);
+    const { isAuth, isWhoAmIChecked } = useSelector(
+        (state: RootState) => state.authSlice
+    );
     const [state, setState] = useState<{ whoAmI: WhoAmIState }>({
         whoAmI: skipToken,
     });
@@ -40,9 +39,10 @@ const App: React.FC = () => {
     useState(() => {
         setState({ ...state, whoAmI: true });
     });
+
     useEffect(() => {
         if (isWhoAmIError) {
-            if ('status' in whoAmIError) {
+            if ("status" in whoAmIError) {
                 if (whoAmIError.status === 401) {
                     dispatch(resetUser());
                 }
@@ -51,9 +51,9 @@ const App: React.FC = () => {
         if (isWhoAmISuccess) dispatch(setUser(whoAmIData));
     }, [isWhoAmIError, isWhoAmISuccess]);
 
-    // if (!isWhoAmIChecked) {
-    //     return <Spinner />;
-    // }
+    if (!isWhoAmIChecked) {
+        return <Spinner />;
+    }
 
     return (
         <Routes>
@@ -61,29 +61,56 @@ const App: React.FC = () => {
                 path="/"
                 element={
                     isAuth ? (
-                        <Navigate to="/dashboard" replace />
+                        <Navigate
+                            to="/dashboard"
+                            replace
+                        />
                     ) : (
-                        <Navigate to="/login" replace />
+                        <Navigate
+                            to="/login"
+                            replace
+                        />
                     )
                 }
             />
-            <Route path="/login" element={<Auth />} />
-            <Route path="/register" element={<Register />} />
+            <Route
+                path="/login"
+                element={<Auth />}
+            />
+            <Route
+                path="/register"
+                element={<Register />}
+            />
             <Route element={<PrivateRoute isAuth={isAuth} />}>
-                <Route path={'/'} element={<Layout />}>
+                <Route
+                    path={"/"}
+                    element={<Layout />}
+                >
                     <Route
                         index
                         element={
                             <RedirectRoute
-                                route={'dashboard'}
+                                route={"dashboard"}
                                 isAuth={isAuth}
                             />
                         }
                     />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/boards" element={<Boards />} />
-                    <Route path="/boards/new" element={<BoardNew />} />
-                    <Route path="/boards/:id" element={<Board />} />
+                    <Route
+                        path="/dashboard"
+                        element={<Dashboard />}
+                    />
+                    <Route
+                        path="/boards"
+                        element={<Boards />}
+                    />
+                    <Route
+                        path="/boards/new"
+                        element={<BoardNew />}
+                    />
+                    <Route
+                        path="/boards/:id"
+                        element={<Board />}
+                    />
                 </Route>
             </Route>
         </Routes>

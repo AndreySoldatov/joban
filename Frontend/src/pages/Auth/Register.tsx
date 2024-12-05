@@ -1,22 +1,22 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
-import { useRegisterUserMutation } from '../../redux/api/auth.api';
-import { SubmitHandler, useForm } from 'react-hook-form';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { RootState } from '../../redux/store';
-import style from './auth.module.sass';
-import classNames from 'classnames';
-import { IconButton, TextField } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { LoadingButton } from '@mui/lab';
-import { toast } from 'react-toastify';
+import React from "react";
+import { useSelector } from "react-redux";
+import { useRegisterUserMutation } from "../../redux/api/auth.api";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { RootState } from "../../redux/store";
+import style from "./auth.module.sass";
+import classNames from "classnames";
+import { IconButton, TextField } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { LoadingButton } from "@mui/lab";
+import { toast } from "react-toastify";
 
 interface RegisterData {
     login: string;
     password: string;
     firstName: string;
-    secondName: string;
+    lastName: string;
 }
 
 const Register: React.FC = () => {
@@ -28,6 +28,7 @@ const Register: React.FC = () => {
             isError: isRegisterError,
         },
     ] = useRegisterUserMutation();
+
     const {
         register,
         handleSubmit,
@@ -38,11 +39,11 @@ const Register: React.FC = () => {
     const navigate = useNavigate();
 
     const notifyError = (message?: string) =>
-        toast.error(message || 'Что-то пошло не так...');
+        toast.error(message || "Что-то пошло не так...");
 
     useEffect(() => {
         if (isRegisterSuccess) {
-            navigate('/login', { state: { isRegisterSuccess } });
+            navigate("/login", { state: { isRegisterSuccess } });
         }
         if (isRegisterError) {
             notifyError();
@@ -50,15 +51,20 @@ const Register: React.FC = () => {
     }, [isRegisterError, isRegisterSuccess]);
 
     if (isAuth) {
-        return <Navigate to="/dashboard" replace />;
+        return (
+            <Navigate
+                to="/dashboard"
+                replace
+            />
+        );
     }
 
     const onSubmit: SubmitHandler<RegisterData> = async (
         data: RegisterData
     ) => {
-        const { login, password, firstName, secondName } = data;
-        if (login && password && firstName && secondName)
-            await registerUser({ login, password, firstName, secondName });
+        const { login, password, firstName, lastName } = data;
+        if (login && password && firstName && lastName)
+            await registerUser({ login, password, firstName, lastName });
     };
 
     const handleClickShowPassword = () => setShowPassword((show) => !show);
@@ -79,12 +85,12 @@ const Register: React.FC = () => {
                         <h2>Регистрация</h2>
                     </div>
                     <TextField
-                        {...register('firstName', {
-                            required: 'Введите имя',
+                        {...register("firstName", {
+                            required: "Введите имя",
                             pattern: {
                                 value: /^[а-яА-Я]+$/,
                                 message:
-                                    'Имя может содержать только буквы русского алфовита',
+                                    "Имя может содержать только буквы русского алфовита",
                             },
                         })}
                         label="Имя"
@@ -94,37 +100,37 @@ const Register: React.FC = () => {
                         error={!!errors.firstName}
                         helperText={
                             errors.firstName &&
-                            typeof errors.firstName?.message === 'string' &&
+                            typeof errors.firstName?.message === "string" &&
                             errors.firstName?.message
                         }
                     />
                     <TextField
-                        {...register('secondName', {
-                            required: 'Введите фамилию',
+                        {...register("lastName", {
+                            required: "Введите фамилию",
                             pattern: {
                                 value: /^[а-яА-Я]+$/,
                                 message:
-                                    'Фамилия может содержать только буквы русского алфовита',
+                                    "Фамилия может содержать только буквы русского алфовита",
                             },
                         })}
                         label="Фамилия"
                         id="secondName"
                         variant="outlined"
                         type="text"
-                        error={!!errors.secondName}
+                        error={!!errors.lastName}
                         helperText={
-                            errors.secondName &&
-                            typeof errors.secondName?.message === 'string' &&
-                            errors.secondName?.message
+                            errors.lastName &&
+                            typeof errors.lastName?.message === "string" &&
+                            errors.lastName?.message
                         }
                     />
                     <TextField
-                        {...register('login', {
-                            required: 'Введите логин',
+                        {...register("login", {
+                            required: "Введите логин",
                             pattern: {
                                 value: /^[a-zA-Z0-9.]+$/,
                                 message:
-                                    'Логин может содержать только латинские буквы, цифры и точку',
+                                    "Логин может содержать только латинские буквы, цифры и точку",
                             },
                         })}
                         label="Логин"
@@ -134,22 +140,22 @@ const Register: React.FC = () => {
                         error={!!errors.login}
                         helperText={
                             errors.login?.message &&
-                            typeof errors.login?.message === 'string' &&
+                            typeof errors.login?.message === "string" &&
                             errors.login?.message
                         }
                     />
                     <TextField
-                        {...register('password', {
-                            required: 'Введите пароль',
+                        {...register("password", {
+                            required: "Введите пароль",
                         })}
                         label="Пароль"
                         id="password"
                         variant="outlined"
-                        type={showPassword ? 'text' : 'password'}
+                        type={showPassword ? "text" : "password"}
                         error={!!errors.password}
                         helperText={
                             errors.password?.message &&
-                            typeof errors.password?.message === 'string' &&
+                            typeof errors.password?.message === "string" &&
                             errors.password?.message
                         }
                         InputProps={{
