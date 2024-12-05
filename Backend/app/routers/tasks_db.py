@@ -1,5 +1,6 @@
 from sqlmodel import Field, SQLModel, Relationship
 
+
 class Task(SQLModel, table=True):
     id: int = Field(primary_key=True)
     title: str = Field(max_length=20)
@@ -9,4 +10,3 @@ class Task(SQLModel, table=True):
     col_id: int = Field(foreign_key="column.id")
 
 # TODO body_path
-
