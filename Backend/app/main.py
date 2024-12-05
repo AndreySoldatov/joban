@@ -9,6 +9,7 @@ from app.routers import boards
 from app.routers import columns
 from app.routers import tasks
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
@@ -32,6 +33,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/", response_class=PlainTextResponse)
 async def root():
