@@ -16,6 +16,8 @@ import Boards from "./pages/Boards/Boards";
 import Board from "./pages/Boards/Board";
 import BoardNew from "./pages/Boards/BoardNew";
 import Spinner from "./components/Spinner/Spinner";
+import Task from "./pages/Task/Task";
+import { Box } from "@mui/material";
 
 type WhoAmIState = boolean | typeof skipToken;
 
@@ -52,7 +54,19 @@ const App: React.FC = () => {
     }, [isWhoAmIError, isWhoAmISuccess]);
 
     if (!isWhoAmIChecked) {
-        return <Spinner />;
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    height: "100vh",
+                }}
+            >
+                <Spinner />
+            </Box>
+        );
     }
 
     return (
@@ -110,6 +124,10 @@ const App: React.FC = () => {
                     <Route
                         path="/boards/:id"
                         element={<Board />}
+                    />
+                    <Route
+                        path="/boards/:boardId/tasks/:taskId"
+                        element={<Task />}
                     />
                 </Route>
             </Route>
