@@ -1,3 +1,5 @@
 fastapi[standard]
 sqlmodel
 pydantic
+autopep8
+pdoc3

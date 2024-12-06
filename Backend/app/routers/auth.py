@@ -43,7 +43,7 @@ async def check_token(cookies: Annotated[Cookies, Cookie()]):
         cookies.id_token, "hex").decode('utf-8').split('*')
     exp_time = datetime.fromisoformat(exp_time)
     if cookies.id_token in tokens:
-        if datetime.now() >= exp_time:
+        if datetime.now(timezone.utc) >= exp_time:
             tokens.remove(cookies.id_token)
             raise HTTPException(status_code=401, detail="Token expired")
     else:
