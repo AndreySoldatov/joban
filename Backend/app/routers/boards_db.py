@@ -1,9 +1,12 @@
 from sqlmodel import Field, SQLModel, Relationship
+
+
 class Board(SQLModel, table=True):
     id: int = Field(primary_key=True)
     title: str = Field(max_length=20)
 
     columns: list["Column"] = Relationship(back_populates="board")
+
 
 class Column(SQLModel, table=True):
     id: int = Field(primary_key=True)
@@ -13,6 +16,7 @@ class Column(SQLModel, table=True):
 
     tasks: list["Task"] = Relationship(back_populates="column")
     board: Board | None = Relationship(back_populates="columns")
+
 
 class Task(SQLModel, table=True):
     id: int = Field(primary_key=True)
