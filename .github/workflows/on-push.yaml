@@ -19,7 +19,7 @@ jobs:
         run: |
           python -m venv ./Backend/.venv
           source ./Backend/.venv/bin/activate
-          pip install -r requirements.txt
+          pip install -r ./Backend/requirements.txt
     
       - name: Prettify code and push
         env:
