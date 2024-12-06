@@ -3,7 +3,7 @@ name: Prettify Autodoc Test
 on:
   push: 
     branches: 
-      -main
+      - andrey
 
 jobs:
   prettify:
