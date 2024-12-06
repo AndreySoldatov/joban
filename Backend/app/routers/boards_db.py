@@ -1,5 +1,5 @@
-from sqlmodel import Field, SQLModel
-
+from sqlmodel import Field, SQLModel, Relationship
+from columns_db import Column
 
 class Board(SQLModel, table=True):
     id: int = Field(primary_key=True)

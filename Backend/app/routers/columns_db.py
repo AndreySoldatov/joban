@@ -1,5 +1,6 @@
-from sqlmodel import Field, Relationship, SQLModel, Relationship
-
+from sqlmodel import Field, Relationship, SQLModel
+from boards_db import Board
+from tasks_db import Task
 
 class Column(SQLModel, table=True):
     id: int = Field(primary_key=True)
