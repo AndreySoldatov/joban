@@ -1,5 +1,5 @@
 from sqlmodel import Field, SQLModel, Relationship
-
+from columns_db import Column
 
 class Task(SQLModel, table=True):
     id: int = Field(primary_key=True)
@@ -8,5 +8,7 @@ class Task(SQLModel, table=True):
     weight: int = Field(default=0)
     ord_num: int = Field(max_length=20)
     col_id: int = Field(foreign_key="column.id")
+
+    column: Column | None = Relationship(back_populates="tasks")
 
 # TODO body_path
