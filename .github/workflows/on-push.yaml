@@ -3,6 +3,7 @@ name: Prettify Autodoc Test
 on:
   push: 
     branches: 
+      - main
       - andrey
 
 jobs:
@@ -10,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
         
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Set up python
         uses: actions/setup-python@v3
         with: 
@@ -19,7 +23,12 @@ jobs:
         run: |
           python -m venv ./Backend/.venv
           source ./Backend/.venv/bin/activate
-          pip install -r requirements.txt
+          pip install -r ./Backend/requirements.txt
+      
+      - name: Test
+        run: |
+          source ./Backend/.venv/bin/activate
+          pytest
     
       - name: Prettify code and push
         env:
@@ -29,9 +38,11 @@ jobs:
           autopep8 --in-place --recursive ./Backend
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Prettify Codebase"
-          git push
+          git add -A
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "Prettify Codebase"
+            git push
+          fi
       
       - name: Generate documentation
         run: |
@@ -42,4 +53,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: documentation
-          path: Backend/app/html/
+          path: html/
