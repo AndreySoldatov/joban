@@ -23,6 +23,11 @@ jobs:
           python -m venv ./Backend/.venv
           source ./Backend/.venv/bin/activate
           pip install -r ./Backend/requirements.txt
+      
+      - name: Test
+        run: |
+          source ./Backend/.venv/bin/activate
+          pytest
     
       - name: Prettify code and push
         env:
