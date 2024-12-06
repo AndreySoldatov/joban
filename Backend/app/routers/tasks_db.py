@@ -9,4 +9,6 @@ class Task(SQLModel, table=True):
     ord_num: int = Field(max_length=20)
     col_id: int = Field(foreign_key="column.id")
 
+    column: Column | None = Relationship(back_populates="tasks")
+
 # TODO body_path
