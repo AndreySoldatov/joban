@@ -1,0 +1,30 @@
+name: Auto Merge PRs
+
+on:
+  workflow_run: 
+    workflows: ['Test PR']
+    types: completed
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge PR
+        run: |
+          # Get PR number
+          PR_NUMBER=$(jq --raw-output .pull_request.number $GITHUB_EVENT_PATH)
+
+          # Merge the PR
+          gh pr merge $PR_NUMBER --merge --auto
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
