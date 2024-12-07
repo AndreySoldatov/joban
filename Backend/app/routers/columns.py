@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from sqlmodel import select
 from app.routers.boards_db import Board
-from app.routers.columns_db import Column
+from app.routers.boards_db import Column
 from app.db import SessionDep
 from typing import List
 

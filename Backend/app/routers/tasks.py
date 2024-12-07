@@ -5,8 +5,7 @@ from sqlmodel import select
 from sqlalchemy import delete
 
 from app.db import SessionDep
-from app.routers.tasks_db import Task
-from app.routers.columns_db import Column
+from app.routers.boards_db import Task
 from typing import List
 
 router = APIRouter()

@@ -15,17 +15,15 @@ import RedirectRoute from "./utils/RedirectRoute";
 import Boards from "./pages/Boards/Boards";
 import Board from "./pages/Boards/Board";
 import BoardNew from "./pages/Boards/BoardNew";
-import Spinner from "./components/Spinner/Spinner";
+// import Spinner from "./components/Spinner/Spinner";
 import Task from "./pages/Task/Task";
-import { Box } from "@mui/material";
+// import { Box } from "@mui/material";
 
 type WhoAmIState = boolean | typeof skipToken;
 
 const App: React.FC = () => {
     const dispatch = useDispatch();
-    const { isAuth, isWhoAmIChecked } = useSelector(
-        (state: RootState) => state.authSlice
-    );
+    const { isAuth } = useSelector((state: RootState) => state.authSlice);
     const [state, setState] = useState<{ whoAmI: WhoAmIState }>({
         whoAmI: skipToken,
     });
@@ -53,28 +51,28 @@ const App: React.FC = () => {
         if (isWhoAmISuccess) dispatch(setUser(whoAmIData));
     }, [isWhoAmIError, isWhoAmISuccess]);
 
-    if (!isWhoAmIChecked) {
-        return (
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    height: "100vh",
-                }}
-            >
-                <Spinner />
-            </Box>
-        );
-    }
+    // if (!isWhoAmIChecked) {
+    //     return (
+    //         <Box
+    //             sx={{
+    //                 display: "flex",
+    //                 justifyContent: "center",
+    //                 flexDirection: "column",
+    //                 alignItems: "center",
+    //                 height: "100vh",
+    //             }}
+    //         >
+    //             <Spinner />
+    //         </Box>
+    //     );
+    // }
 
     return (
         <Routes>
             <Route
                 path="/"
                 element={
-                    isAuth ? (
+                    !isAuth ? (
                         <Navigate
                             to="/dashboard"
                             replace
