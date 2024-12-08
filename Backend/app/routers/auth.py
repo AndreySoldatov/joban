@@ -42,9 +42,12 @@ async def check_token(cookies: Annotated[Cookies, Cookie()], session: SessionDep
 async def prot():
     return "authorized"
 
+class DisplayName(RestRequestModel):
+    display_name: str
+
 
 @router.get("/whoami", dependencies=[Depends(check_token)])
-async def whoami(session: SessionDep, cookies: Annotated[Cookies, Cookie()]):
+async def whoami(session: SessionDep, cookies: Annotated[Cookies, Cookie()]) -> DisplayName:
     """
     Retrieves the display name of the authenticated user.
 
@@ -54,16 +57,10 @@ async def whoami(session: SessionDep, cookies: Annotated[Cookies, Cookie()]):
 
     Returns:
         dict: A dictionary with the key "display_name" containing the user's full name.
-
-    Raises:
-        HTTPException: If the user is not found or unauthorized, with status code 401.
     """
     token_record = session.exec(select(TokenStore).where(TokenStore.token == cookies.id_token)).first()
     db_user = session.exec(select(User).where(User.login == token_record.login)).first()
-    if db_user:
-        return {"display_name": db_user.first_name + " " + db_user.last_name}
-    else:
-        raise HTTPException(status_code=401, detail="Not authorized")
+    return {"display_name": db_user.first_name + " " + db_user.last_name}
 
 
 class UserRegisterRequest(RestRequestModel):
@@ -119,10 +116,6 @@ async def register(user: UserRegisterRequest, session: SessionDep) -> User:
 class UserLoginRequest(RestRequestModel):
     login: str
     password: str
-
-
-class DisplayName(RestRequestModel):
-    display_name: str
 
 
 login_responses = {
@@ -181,5 +174,5 @@ async def logout(cookies: Annotated[Cookies, Cookie()], response: Response, sess
     session.delete(token_record)
     session.commit()
     response.set_cookie(key="DxpAccessToken", value="")
-    return "logout"
+    return 'logout'
 
