@@ -9,6 +9,7 @@ class User(SQLModel, table=True):
     password_hash: str = Field(max_length=64)
     salt: str = Field(max_length=16)
 
+
 class TokenStore(SQLModel, table=True):
     id: int = Field(primary_key=True)
     login: str = Field(max_length=20)
