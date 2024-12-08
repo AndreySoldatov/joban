@@ -13,6 +13,7 @@ import os
 
 router = APIRouter(prefix="/auth")
 
+
 class Cookies(RestRequestModel):
     id_token: str = Field(validation_alias="DxpAccessToken")
 
@@ -28,7 +29,8 @@ async def check_token(cookies: Annotated[Cookies, Cookie()], session: SessionDep
     Raises:
         HTTPException: If the token is expired or not found, with status code 401.
     """
-    token_record = session.exec(select(TokenStore).where(TokenStore.token == cookies.id_token)).first()
+    token_record = session.exec(select(TokenStore).where(
+        TokenStore.token == cookies.id_token)).first()
     if token_record:
         if datetime.now() >= datetime.fromisoformat(token_record.exp_time):
             session.delete(token_record)
@@ -58,8 +60,10 @@ async def whoami(session: SessionDep, cookies: Annotated[Cookies, Cookie()]) -> 
     Returns:
         dict: A dictionary with the key "display_name" containing the user's full name.
     """
-    token_record = session.exec(select(TokenStore).where(TokenStore.token == cookies.id_token)).first()
-    db_user = session.exec(select(User).where(User.login == token_record.login)).first()
+    token_record = session.exec(select(TokenStore).where(
+        TokenStore.token == cookies.id_token)).first()
+    db_user = session.exec(select(User).where(
+        User.login == token_record.login)).first()
     return {"display_name": db_user.first_name + " " + db_user.last_name}
 
 
@@ -91,7 +95,8 @@ async def register(user: UserRegisterRequest, session: SessionDep) -> User:
     Raises:
         HTTPException: If the user already exists, with status code 409.
     """
-    check_user = session.exec(select(User).where(User.login == user.login)).first()
+    check_user = session.exec(select(User).where(
+        User.login == user.login)).first()
     if check_user:
         raise HTTPException(detail="User already exists", status_code=409)
 
@@ -147,7 +152,8 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
             - If the user is not found, with status code 404.
             - If the password is incorrect, with status code 401.
     """
-    db_user = session.exec(select(User).where(User.login == user.login)).first()
+    db_user = session.exec(select(User).where(
+        User.login == user.login)).first()
     if not db_user:
         raise HTTPException(detail="User not found", status_code=404)
 
@@ -158,8 +164,8 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
 
     token = os.urandom(32).hex()
     session.add(TokenStore(
-        login=user.login, 
-        token=token, 
+        login=user.login,
+        token=token,
         exp_time=(datetime.now() + timedelta(hours=1)).isoformat()
     ))
     session.commit()
@@ -170,9 +176,9 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
 
 @router.get("/logout", status_code=200, dependencies=[Depends(check_token)])
 async def logout(cookies: Annotated[Cookies, Cookie()], response: Response, session: SessionDep):
-    token_record = session.exec(select(TokenStore).where(TokenStore.token == cookies.id_token)).first()
+    token_record = session.exec(select(TokenStore).where(
+        TokenStore.token == cookies.id_token)).first()
     session.delete(token_record)
     session.commit()
     response.set_cookie(key="DxpAccessToken", value="")
-    return 'logout'
-
+    return "logout"
