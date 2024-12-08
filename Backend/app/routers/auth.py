@@ -1,54 +1,39 @@
 from typing import Annotated
-from app.routers.auth_db import User
+from app.routers.auth_db import User, TokenStore
 from app.db import SessionDep
 
 from sqlmodel import select
 from fastapi import APIRouter, HTTPException, Depends, Response, Cookie
 from pydantic import Field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from app.routers.auth_utils import gen_salt
 from app.dependencies import RestRequestModel
-import codecs
 import hashlib
+import os
 
 router = APIRouter(prefix="/auth")
-
-tokens = []
-
 
 class Cookies(RestRequestModel):
     id_token: str = Field(validation_alias="DxpAccessToken")
 
 
-async def check_token(cookies: Annotated[Cookies, Cookie()]):
+async def check_token(cookies: Annotated[Cookies, Cookie()], session: SessionDep):
     """
-    Validates the user's token.
-
-    This function checks if the token from the cookies is valid, unexpired, 
-    and present in the global token list.
+    Validates the provided token from cookies and checks its expiration.
 
     Args:
-        cookies (Cookies): The user's cookies, including the `id_token`.
+        cookies (Annotated[Cookies, Cookie()]): Cookies object containing the token to validate.
+        session (SessionDep): Database session dependency for querying and updating the token store.
 
     Raises:
-        HTTPException: 
-            - 401 Unauthorized if the token is expired.
-            - 401 Unauthorized if the token is not found in the global list.
-
-    Notes:
-        - Expired tokens are automatically removed from the global list.
+        HTTPException: If the token is expired or not found, with status code 401.
     """
-
-    (_, exp_time) = codecs.decode(
-        cookies.id_token, "hex").decode('utf-8').split('*')
-    exp_time = datetime.fromisoformat(exp_time)
-    if cookies.id_token in tokens:
-        if datetime.now(timezone.utc) >= exp_time:
-            tokens.remove(cookies.id_token)
-            raise HTTPException(
-                status_code=401,
-                detail="Token expired"
-            )
+    token_record = session.exec(select(TokenStore).where(TokenStore.token == cookies.id_token)).first()
+    if token_record:
+        if datetime.now() >= datetime.fromisoformat(token_record.exp_time):
+            session.delete(token_record)
+            session.commit()
+            raise HTTPException(status_code=401, detail="Token expired")
     else:
         raise HTTPException(status_code=401, detail="Not authorized")
 
@@ -61,28 +46,24 @@ async def prot():
 @router.get("/whoami", dependencies=[Depends(check_token)])
 async def whoami(session: SessionDep, cookies: Annotated[Cookies, Cookie()]):
     """
-    Retrieves the currently logged-in user's display name.
-
-    This endpoint decodes the token to identify the user and fetches their 
-    details from the database.
+    Retrieves the display name of the authenticated user.
 
     Args:
-        session (SessionDep): A database session for querying user data.
-        cookies (Cookies): The user's cookies, including the `id_token`.
+        session (SessionDep): Database session dependency for querying user information.
+        cookies (Annotated[Cookies, Cookie()]): Cookies object containing the token for user authentication.
 
     Returns:
-        dict: A dictionary containing the user's display name 
-            (first and last name combined).
+        dict: A dictionary with the key "display_name" containing the user's full name.
 
-    Notes:
-        - Requires a valid token (enforced by `check_token`).
+    Raises:
+        HTTPException: If the user is not found or unauthorized, with status code 401.
     """
-
-    (username, _) = codecs.decode(
-        cookies.id_token, "hex").decode('utf-8').split('*')
-    query = select(User).where(User.login == username)
-    db_user = session.exec(query).first()
-    return {"display_name": db_user.first_name + " " + db_user.last_name}
+    token_record = session.exec(select(TokenStore).where(TokenStore.token == cookies.id_token)).first()
+    db_user = session.exec(select(User).where(User.login == token_record.login)).first()
+    if db_user:
+        return {"display_name": db_user.first_name + " " + db_user.last_name}
+    else:
+        raise HTTPException(status_code=401, detail="Not authorized")
 
 
 class UserRegisterRequest(RestRequestModel):
@@ -103,32 +84,17 @@ async def register(user: UserRegisterRequest, session: SessionDep) -> User:
     """
     Registers a new user in the system.
 
-    This endpoint creates a new user by validating the input, checking for 
-    existing users with the same login, and securely hashing the password. 
-    If successful, the new user is stored in the database and returned.
-
     Args:
-        user (UserRegisterRequest): An object containing the registration 
-            details such as login, password, first name, and last name.
-        session (SessionDep): A database session dependency for interacting 
-            with the database.
+        user (UserRegisterRequest): User registration request containing login, password, and user details.
+        session (SessionDep): Database session dependency for storing the new user.
 
     Returns:
-        User: The newly created user object.
+        User: The newly registered user object.
 
     Raises:
-        HTTPException: If a user with the same login already exists (409 
-            Conflict).
-
-    Notes:
-        - Passwords are hashed with a generated salt using SHA-256 before 
-        storage.
-        - The function raises a 409 HTTP status code if a user with the 
-        given login already exists.
+        HTTPException: If the user already exists, with status code 409.
     """
-
-    query = select(User).where(User.login == user.login)
-    check_user = session.exec(query).first()
+    check_user = session.exec(select(User).where(User.login == user.login)).first()
     if check_user:
         raise HTTPException(detail="User already exists", status_code=409)
 
@@ -150,26 +116,6 @@ async def register(user: UserRegisterRequest, session: SessionDep) -> User:
     return db_user
 
 
-def create_token(user: User) -> str:
-    """
-    Generates a simple token for a given user.
-
-    This function creates a token by combining the user's login with an 
-    expiration time (1 hour from the current time) and encoding the result 
-    as a hexadecimal string.
-
-    Args:
-        user (User): The user object for whom the token is generated. 
-            The `login` attribute of the user is used in the token.
-
-    Returns:
-        str: A hexadecimal-encoded string representing the token.
-    """
-
-    exp_time = datetime.now(timezone.utc) + timedelta(hours=1)
-    return (user.login + "*" + exp_time.isoformat()).encode('utf-8').hex()
-
-
 class UserLoginRequest(RestRequestModel):
     login: str
     password: str
@@ -189,40 +135,26 @@ login_responses = {
 @router.post("/login", status_code=200, responses=login_responses)
 async def login(user: UserLoginRequest, session: SessionDep, response: Response) -> DisplayName:
     """
-    Handles user login and authentication.
+    Authenticates a user and generates an access token.
 
-    This endpoint validates a user's login credentials. If the credentials 
-    are correct, it generates a token, stores it in a global token list, 
-    sets it as a cookie, and returns the user's display name.
+    This function verifies the user's credentials by comparing the provided password, salted and hashed, with the stored hash. 
+    If valid, it generates a unique access token, stores it in the database with an expiration time, and sets it as a cookie 
+    in the response.
 
     Args:
-        user (UserLoginRequest): An object containing the login credentials, 
-            including the login and password.
-        session (SessionDep): A database session dependency for interacting 
-            with the database.
-        response (Response): The HTTP response object for setting cookies.
+        user (UserLoginRequest): Login request containing the user's login and password.
+        session (SessionDep): Database session dependency for user authentication and token storage.
+        response (Response): Response object to set the authentication token as a cookie.
 
     Returns:
-        DisplayName: A dictionary containing the user's display name 
-            (first and last name combined).
+        DisplayName: A dictionary with the key "display_name" containing the user's full name.
 
     Raises:
         HTTPException: 
-            - If the user is not found (404 Not Found).
-            - If the password is incorrect (401 Unauthorized).
-
-    Side Effects:
-        - Sets a cookie `DxpAccessToken` in the response with the generated 
-        token.
-        - Appends the token to the global `tokens` list.
-
-    Notes:
-        - Passwords are hashed with the stored salt using SHA-256 and 
-        compared to the stored hash for validation.
+            - If the user is not found, with status code 404.
+            - If the password is incorrect, with status code 401.
     """
-
-    query = select(User).where(User.login == user.login)
-    db_user = session.exec(query).first()
+    db_user = session.exec(select(User).where(User.login == user.login)).first()
     if not db_user:
         raise HTTPException(detail="User not found", status_code=404)
 
@@ -231,34 +163,23 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
     if hasher.hexdigest() != db_user.password_hash:
         raise HTTPException(detail="Wrong password", status_code=401)
 
-    token = create_token(user)
-    tokens.append(token)
+    token = os.urandom(32).hex()
+    session.add(TokenStore(
+        login=user.login, 
+        token=token, 
+        exp_time=(datetime.now() + timedelta(hours=1)).isoformat()
+    ))
+    session.commit()
 
     response.set_cookie(key="DxpAccessToken", value=token)
     return {"display_name": db_user.first_name + " " + db_user.last_name}
 
 
-@router.post("/logout", status_code=200, dependencies=[Depends(check_token)])
-async def logout(cookies: Annotated[Cookies, Cookie()], response: Response):
-    """
-    Logs out the user by invalidating their token.
-
-    This endpoint removes the user's token from the global token list and 
-    clears the `DxpAccessToken` cookie.
-
-    Args:
-        cookies (Cookies): The user's cookies, including the `id_token`.
-        response (Response): The HTTP response object for clearing cookies.
-
-    Returns:
-        str: A message confirming logout.
-
-    Notes:
-        - Requires a valid token to access (enforced by `check_token`).
-        - Token management is handled via a global list.
-    """
-
-    if cookies.id_token in tokens:
-        tokens.remove(cookies.id_token)
+@router.get("/logout", status_code=200, dependencies=[Depends(check_token)])
+async def logout(cookies: Annotated[Cookies, Cookie()], response: Response, session: SessionDep):
+    token_record = session.exec(select(TokenStore).where(TokenStore.token == cookies.id_token)).first()
+    session.delete(token_record)
+    session.commit()
     response.set_cookie(key="DxpAccessToken", value="")
     return "logout"
+
