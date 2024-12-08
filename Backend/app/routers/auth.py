@@ -44,6 +44,7 @@ async def check_token(cookies: Annotated[Cookies, Cookie()], session: SessionDep
 async def prot():
     return "authorized"
 
+
 class DisplayName(RestRequestModel):
     display_name: str
 
