@@ -12,19 +12,23 @@ create_boards_responses = {
     "200": {"description": "Board create"},
 }
 
+
 class ColumnCreateRequest(RestRequestModel):
     title: str = Field()
     order_number: int = Field()
+
 
 class BoardCreateRequest(RestRequestModel):
     title: str = Field()
     columns: List['ColumnCreateRequest']
 
+
 @router.post("/new", status_code=200, responses=create_boards_responses)
 async def create_board(board_req: BoardCreateRequest, session: SessionDep):
-    board = Board(title=board_req.title, 
-                  columns=[Column(title=col.title, ord_num=col.order_number) for col in board_req.columns]
-                )
+    board = Board(title=board_req.title,
+                  columns=[Column(title=col.title, ord_num=col.order_number)
+                           for col in board_req.columns]
+                  )
     session.add(board)
     session.commit()
     session.refresh(board)
@@ -46,12 +50,13 @@ get_board_responses = {
     "404": {"description": "Board not found"},
 }
 
+
 @router.get("/{board_id}", status_code=200)
 async def get_board(board_id: int, session: SessionDep):
     board = session.exec(select(Board).where(Board.id == board_id)).first()
     if not board:
         raise HTTPException(detail="Board not found", status_code=404)
-    
+
     columns = [{
         "boardId": col.board_id,
         "id": col.id,
@@ -72,6 +77,7 @@ async def get_board(board_id: int, session: SessionDep):
         "columns": columns,
     }
 
+
 @router.delete("/{board_id}", status_code=200)
 async def del_board(board_id: int, session: SessionDep):
     board = session.exec(select(Board).where(Board.id == board_id)).first()
@@ -85,15 +91,18 @@ class TaskPatch(RestRequestModel):
     order_number: int
     body: str
 
+
 class ColumnPatch(RestRequestModel):
     id: int
     title: str
     order_number: int
     tasks: List[TaskPatch]
 
+
 class BoardPatch(RestRequestModel):
     title: str
     columns: List[ColumnPatch]
+
 
 @router.patch("/{board_id}", status_code=200)
 async def del_board(new_board: BoardPatch, board_id: int, session: SessionDep):
@@ -113,7 +122,7 @@ async def del_board(new_board: BoardPatch, board_id: int, session: SessionDep):
             task.body = t.body
             task.ord_num = t.order_number
             session.add(task)
-    
+
     session.commit()
 
 
@@ -123,11 +132,13 @@ class TaskCreateRequest(RestRequestModel):
     column_id: int = Field()
     order_number: int
 
+
 @router.post("/{board_id}/tasks/new", status_code=200)
 async def add_task(req: TaskCreateRequest, board_id: int, session: SessionDep):
-    column = session.exec(select(Column).where(Column.id == req.column_id)).first()
+    column = session.exec(select(Column).where(
+        Column.id == req.column_id)).first()
     column.tasks.append(Task(
-        title=req.title, 
+        title=req.title,
         body=req.description
     ))
     session.add(column)
