@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth
 from app.routers import boards
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()

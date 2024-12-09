@@ -9,6 +9,7 @@ from app.routers.auth import check_token
 
 board_router = APIRouter(prefix="/boards")
 
+
 class ColumnCreateRequest(RestRequestModel):
     title: str
     order_number: int
@@ -17,6 +18,7 @@ class ColumnCreateRequest(RestRequestModel):
 class BoardCreateRequest(RestRequestModel):
     title: str
     columns: List['ColumnCreateRequest']
+
 
 @board_router.post("/new", status_code=200, dependencies=[Depends(check_token)])
 async def create_board(board_req: BoardCreateRequest, session: SessionDep):
@@ -28,6 +30,7 @@ async def create_board(board_req: BoardCreateRequest, session: SessionDep):
     session.commit()
     session.refresh(board)
     return board
+
 
 @board_router.get("", status_code=200, dependencies=[Depends(check_token)])
 async def get_boards_list(session: SessionDep) -> List[Board]:
@@ -41,6 +44,7 @@ async def query_board(board_id: int, session: SessionDep) -> Board:
     if not board:
         raise HTTPException(detail="Board not found", status_code=404)
     return board
+
 
 @board_router.get("/{board_id}", status_code=200, dependencies=[Depends(check_token)])
 async def get_board(board: Annotated[Board, Depends(query_board)]):
@@ -63,6 +67,7 @@ async def get_board(board: Annotated[Board, Depends(query_board)]):
         "title": board.title,
         "columns": columns,
     }
+
 
 @board_router.delete("/{board_id}", status_code=200, dependencies=[Depends(check_token)])
 async def del_board(board: Annotated[Board, Depends(query_board)], session: SessionDep):
@@ -88,6 +93,7 @@ class BoardPatch(RestRequestModel):
     title: str
     columns: List[ColumnPatch]
 
+
 @board_router.put("/{board_id}", status_code=200, dependencies=[Depends(check_token)])
 async def patch_board(new_board: BoardPatch, board: Annotated[Board, Depends(query_board)], session: SessionDep):
     board.title = new_board.title
@@ -111,20 +117,23 @@ async def patch_board(new_board: BoardPatch, board: Annotated[Board, Depends(que
 
 task_router = APIRouter(prefix="/tasks")
 
+
 class TaskCreateRequest(RestRequestModel):
     title: str
     description: str
     column_id: int
 
+
 @task_router.post("/new", status_code=200, dependencies=[Depends(check_token)])
 async def add_task(req: TaskCreateRequest, session: SessionDep):
     column = session.get(Column, req.column_id)
     column.tasks.append(Task(
-        title=req.title, 
+        title=req.title,
         body=req.description,
     ))
     session.add(column)
     session.commit()
+
 
 async def query_task(task_id: int, session: SessionDep) -> Task:
     task = session.get(Task, task_id)
@@ -132,19 +141,23 @@ async def query_task(task_id: int, session: SessionDep) -> Task:
         raise HTTPException(detail="Task not found", status_code=404)
     return task
 
+
 @task_router.get("/{task_id}", status_code=200, dependencies=[Depends(check_token)])
 async def get_task(task: Annotated[Task, Depends(query_task)]):
     return task
+
 
 @task_router.delete("/{task_id}", status_code=200, dependencies=[Depends(check_token)])
 async def del_task(task: Annotated[Task, Depends(query_task)], session: SessionDep):
     session.delete(task)
     session.commit()
 
+
 class TaskPatchRequest(RestRequestModel):
     title: str = Field()
     description: str
     column_id: int
+
 
 @task_router.put("/{task_id}", status_code=200, dependencies=[Depends(check_token)])
 async def put_task(req: TaskPatchRequest, task: Annotated[Task, Depends(query_task)], session: SessionDep):
