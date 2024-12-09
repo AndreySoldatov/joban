@@ -13,15 +13,17 @@ class ColumnCreateRequest(RestRequestModel):
     title: str
     order_number: int
 
+
 class BoardCreateRequest(RestRequestModel):
     title: str
     columns: List['ColumnCreateRequest']
 
 @board_router.post("/new", status_code=200, dependencies=[Depends(check_token)])
 async def create_board(board_req: BoardCreateRequest, session: SessionDep):
-    board = Board(title=board_req.title, 
-                  columns=[Column(title=col.title, ord_num=col.order_number) for col in board_req.columns]
-                )
+    board = Board(title=board_req.title,
+                  columns=[Column(title=col.title, ord_num=col.order_number)
+                           for col in board_req.columns]
+                  )
     session.add(board)
     session.commit()
     session.refresh(board)
@@ -74,11 +76,13 @@ class TaskPatch(RestRequestModel):
     order_number: int
     body: str
 
+
 class ColumnPatch(RestRequestModel):
     id: int
     title: str
     order_number: int
     tasks: List[TaskPatch]
+
 
 class BoardPatch(RestRequestModel):
     title: str
@@ -101,7 +105,7 @@ async def patch_board(new_board: BoardPatch, board: Annotated[Board, Depends(que
             task.body = t.body
             task.ord_num = t.order_number
             session.add(task)
-    
+
     session.commit()
 
 
