@@ -1,29 +1,26 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import select
 from app.routers.boards_db import Board, Column, Task
 from app.db import SessionDep
-from typing import List
+from typing import List, Annotated
 from app.dependencies import RestRequestModel
 from pydantic import Field
+from app.routers.auth import check_token
 
-router = APIRouter(prefix="/boards")
-
-create_boards_responses = {
-    "200": {"description": "Board create"},
-}
+board_router = APIRouter(prefix="/boards")
 
 
 class ColumnCreateRequest(RestRequestModel):
-    title: str = Field()
-    order_number: int = Field()
+    title: str
+    order_number: int
 
 
 class BoardCreateRequest(RestRequestModel):
-    title: str = Field()
+    title: str
     columns: List['ColumnCreateRequest']
 
 
-@router.post("/new", status_code=200, responses=create_boards_responses)
+@board_router.post("/new", status_code=200, dependencies=[Depends(check_token)])
 async def create_board(board_req: BoardCreateRequest, session: SessionDep):
     board = Board(title=board_req.title,
                   columns=[Column(title=col.title, ord_num=col.order_number)
@@ -34,29 +31,23 @@ async def create_board(board_req: BoardCreateRequest, session: SessionDep):
     session.refresh(board)
     return board
 
-get_boards_list_responses = {
-    "200": {"description": "Boards list received"},
-}
 
-
-@router.get("", status_code=200, responses=get_boards_list_responses)
+@board_router.get("", status_code=200, dependencies=[Depends(check_token)])
 async def get_boards_list(session: SessionDep) -> List[Board]:
     query = select(Board)
     boards = session.exec(query).all()
     return boards
 
-get_board_responses = {
-    "200": {"description": "Board received"},
-    "404": {"description": "Board not found"},
-}
 
-
-@router.get("/{board_id}", status_code=200)
-async def get_board(board_id: int, session: SessionDep):
-    board = session.exec(select(Board).where(Board.id == board_id)).first()
+async def query_board(board_id: int, session: SessionDep) -> Board:
+    board = session.get(Board, board_id)
     if not board:
         raise HTTPException(detail="Board not found", status_code=404)
+    return board
 
+
+@board_router.get("/{board_id}", status_code=200, dependencies=[Depends(check_token)])
+async def get_board(board: Annotated[Board, Depends(query_board)]):
     columns = [{
         "boardId": col.board_id,
         "id": col.id,
@@ -64,7 +55,7 @@ async def get_board(board_id: int, session: SessionDep):
         "title": col.title,
         "tasks": [{
             "title": t.title,
-            "body": t.body,
+            "description": t.body,
             "columnId": t.col_id,
             "orderNumber": t.ord_num,
             "id": t.id
@@ -78,9 +69,8 @@ async def get_board(board_id: int, session: SessionDep):
     }
 
 
-@router.delete("/{board_id}", status_code=200)
-async def del_board(board_id: int, session: SessionDep):
-    board = session.exec(select(Board).where(Board.id == board_id)).first()
+@board_router.delete("/{board_id}", status_code=200, dependencies=[Depends(check_token)])
+async def del_board(board: Annotated[Board, Depends(query_board)], session: SessionDep):
     session.delete(board)
     session.commit()
 
@@ -104,9 +94,8 @@ class BoardPatch(RestRequestModel):
     columns: List[ColumnPatch]
 
 
-@router.patch("/{board_id}", status_code=200)
-async def del_board(new_board: BoardPatch, board_id: int, session: SessionDep):
-    board = session.get(Board, board_id)
+@board_router.put("/{board_id}", status_code=200, dependencies=[Depends(check_token)])
+async def patch_board(new_board: BoardPatch, board: Annotated[Board, Depends(query_board)], session: SessionDep):
     board.title = new_board.title
     session.add(board)
 
@@ -126,20 +115,56 @@ async def del_board(new_board: BoardPatch, board_id: int, session: SessionDep):
     session.commit()
 
 
+task_router = APIRouter(prefix="/tasks")
+
+
 class TaskCreateRequest(RestRequestModel):
-    title: str = Field()
-    description: str = Field()
-    column_id: int = Field()
-    order_number: int
+    title: str
+    description: str
+    column_id: int
 
 
-@router.post("/{board_id}/tasks/new", status_code=200)
-async def add_task(req: TaskCreateRequest, board_id: int, session: SessionDep):
-    column = session.exec(select(Column).where(
-        Column.id == req.column_id)).first()
+@task_router.post("/new", status_code=200, dependencies=[Depends(check_token)])
+async def add_task(req: TaskCreateRequest, session: SessionDep):
+    column = session.get(Column, req.column_id)
     column.tasks.append(Task(
         title=req.title,
-        body=req.description
+        body=req.description,
     ))
     session.add(column)
     session.commit()
+
+
+async def query_task(task_id: int, session: SessionDep) -> Task:
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(detail="Task not found", status_code=404)
+    return task
+
+
+@task_router.get("/{task_id}", status_code=200, dependencies=[Depends(check_token)])
+async def get_task(task: Annotated[Task, Depends(query_task)]):
+    return task
+
+
+@task_router.delete("/{task_id}", status_code=200, dependencies=[Depends(check_token)])
+async def del_task(task: Annotated[Task, Depends(query_task)], session: SessionDep):
+    session.delete(task)
+    session.commit()
+
+
+class TaskPatchRequest(RestRequestModel):
+    title: str = Field()
+    description: str
+    column_id: int
+
+
+@task_router.put("/{task_id}", status_code=200, dependencies=[Depends(check_token)])
+async def put_task(req: TaskPatchRequest, task: Annotated[Task, Depends(query_task)], session: SessionDep):
+    task.title = req.title
+    task.body = req.description
+    task.col_id = req.column_id
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task

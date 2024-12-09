@@ -6,8 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import auth
 from app.routers import boards
-from app.routers import columns
-from app.routers import tasks
 
 
 @asynccontextmanager
@@ -17,9 +15,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(auth.router)
-app.include_router(boards.router)
-app.include_router(columns.router)
-app.include_router(tasks.router)
+app.include_router(boards.board_router)
+app.include_router(boards.task_router)
 
 
 # origins = [
