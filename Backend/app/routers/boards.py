@@ -34,8 +34,7 @@ async def create_board(board_req: BoardCreateRequest, session: SessionDep):
 
 @board_router.get("", status_code=200, dependencies=[Depends(check_token)])
 async def get_boards_list(session: SessionDep) -> List[Board]:
-    query = select(Board)
-    boards = session.exec(query).all()
+    boards = session.exec(select(Board)).all()
     return boards
 
 
@@ -101,12 +100,16 @@ async def patch_board(new_board: BoardPatch, board: Annotated[Board, Depends(que
 
     for c in new_board.columns:
         column = session.get(Column, c.id)
+        if not column:
+            raise HTTPException(status_code=404, detail="Column not found")
         column.title = c.title
         column.ord_num = c.order_number
         session.add(column)
 
         for t in c.tasks:
             task = session.get(Task, t.id)
+            if not task:
+                raise HTTPException(status_code=404, detail="Task not found")
             task.title = t.title
             task.body = t.body
             task.ord_num = t.order_number
