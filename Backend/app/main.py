@@ -21,6 +21,7 @@ app.include_router(boards.task_router)
 
 origins = [
     "http://joban.ddns.net",
+    "http://localhost:5173",
 ]
 
 app.add_middleware(

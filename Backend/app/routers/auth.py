@@ -136,8 +136,8 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
     """
     Authenticates a user and generates an access token.
 
-    This function verifies the user's credentials by comparing the provided password, salted and hashed, with the stored hash. 
-    If valid, it generates a unique access token, stores it in the database with an expiration time, and sets it as a cookie 
+    This function verifies the user's credentials by comparing the provided password, salted and hashed, with the stored hash.
+    If valid, it generates a unique access token, stores it in the database with an expiration time, and sets it as a cookie
     in the response.
 
     Args:
@@ -149,7 +149,7 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
         DisplayName: A dictionary with the key "display_name" containing the user's full name.
 
     Raises:
-        HTTPException: 
+        HTTPException:
             - If the user is not found, with status code 404.
             - If the password is incorrect, with status code 401.
     """
@@ -171,7 +171,15 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
     ))
     session.commit()
 
-    response.set_cookie(key="DxpAccessToken", value=token)
+    response.set_cookie(
+        key="DxpAccessToken",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="None",
+        max_age=3600,
+        expires=(datetime.now() + timedelta(hours=1)).isoformat(),
+    )
     return {"display_name": db_user.first_name + " " + db_user.last_name}
 
 
@@ -179,7 +187,17 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
 async def logout(cookies: Annotated[Cookies, Cookie()], response: Response, session: SessionDep):
     token_record = session.exec(select(TokenStore).where(
         TokenStore.token == cookies.id_token)).first()
-    session.delete(token_record)
-    session.commit()
-    response.set_cookie(key="DxpAccessToken", value="")
+    if token_record:
+        session.delete(token_record)
+        session.commit()
+
+    response.set_cookie(
+        key="DxpAccessToken",
+        value="",
+        httponly=True,
+        secure=True,
+        samesite="None",
+        max_age=0,
+        expires="Thu, 01 Jan 1970 00:00:00 GMT",
+    )
     return "logout"
