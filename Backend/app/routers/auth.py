@@ -68,7 +68,8 @@ async def whoami(session: SessionDep, cookies: Annotated[Cookies, Cookie()]) -> 
         TokenStore.token == cookies.id_token)).first()
 
     if not token_record:
-        raise HTTPException(status_code=401, detail="Token is invalid or expired")
+        raise HTTPException(
+            status_code=401, detail="Token is invalid or expired")
 
     db_user = session.exec(select(User).where(
         User.login == token_record.login)).first()
@@ -181,11 +182,11 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
     response.set_cookie(
         key="DxpAccessToken",
         value=token,
-        httponly=True,   
-        secure=True,     
-        samesite="None",  
-        max_age=3600,    
-        expires=(datetime.now() + timedelta(hours=1)).isoformat(),  
+        httponly=True,
+        secure=True,
+        samesite="None",
+        max_age=3600,
+        expires=(datetime.now() + timedelta(hours=1)).isoformat(),
     )
     return {"display_name": db_user.first_name + " " + db_user.last_name}
 
