@@ -19,13 +19,14 @@ app.include_router(boards.board_router)
 app.include_router(boards.task_router)
 
 
-# origins = [
-#     "http://localhost:5173",
-# ]
+origins = [
+    "http://joban.ddns.net",
+    "http://localhost:5173",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

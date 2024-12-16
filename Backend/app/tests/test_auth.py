@@ -98,6 +98,6 @@ def test_logout():
                                  "password": "1234"
                              })
 
-    logout_resp = client.get(
+    logout_resp = client.post(
         "/auth/logout", cookies={"DxpAccessToken": login_resp.cookies.get("DxpAccessToken")})
     assert logout_resp.text == '"logout"'

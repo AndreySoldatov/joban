@@ -8,22 +8,28 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import { useEffect, useState } from "react";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useWhoAmIQuery } from "./redux/api/auth.api";
-import { resetUser, setUser } from "./redux/slices/auth.slice";
+import {
+    resetUser,
+    setIsWhoAmIChecked,
+    setUser,
+} from "./redux/slices/auth.slice";
 import Register from "./pages/Auth/Register";
 import Layout from "./layout/Layout";
 import RedirectRoute from "./utils/RedirectRoute";
 import Boards from "./pages/Boards/Boards";
 import Board from "./pages/Boards/Board";
 import BoardNew from "./pages/Boards/BoardNew";
-// import Spinner from "./components/Spinner/Spinner";
+import Spinner from "./components/Spinner/Spinner";
 import Task from "./pages/Task/Task";
-// import { Box } from "@mui/material";
+import { Box } from "@mui/material";
 
 type WhoAmIState = boolean | typeof skipToken;
 
 const App: React.FC = () => {
     const dispatch = useDispatch();
-    const { isAuth } = useSelector((state: RootState) => state.authSlice);
+    const { isAuth, isWhoAmIChecked } = useSelector(
+        (state: RootState) => state.authSlice
+    );
     const [state, setState] = useState<{ whoAmI: WhoAmIState }>({
         whoAmI: skipToken,
     });
@@ -33,39 +39,38 @@ const App: React.FC = () => {
         data: whoAmIData,
         isSuccess: isWhoAmISuccess,
         isError: isWhoAmIError,
-        error: whoAmIError,
     } = useWhoAmIQuery(whoAmI);
 
-    useState(() => {
-        setState({ ...state, whoAmI: true });
-    });
+    useEffect(() => {
+        setState((prev) => ({ ...prev, whoAmI: true }));
+    }, []);
 
     useEffect(() => {
         if (isWhoAmIError) {
-            if ("status" in whoAmIError) {
-                if (whoAmIError.status === 401) {
-                    dispatch(resetUser());
-                }
-            }
+            dispatch(resetUser());
+            dispatch(setIsWhoAmIChecked());
         }
-        if (isWhoAmISuccess) dispatch(setUser(whoAmIData));
+        if (isWhoAmISuccess) {
+            dispatch(setUser(whoAmIData));
+            dispatch(setIsWhoAmIChecked());
+        }
     }, [isWhoAmIError, isWhoAmISuccess]);
 
-    // if (!isWhoAmIChecked) {
-    //     return (
-    //         <Box
-    //             sx={{
-    //                 display: "flex",
-    //                 justifyContent: "center",
-    //                 flexDirection: "column",
-    //                 alignItems: "center",
-    //                 height: "100vh",
-    //             }}
-    //         >
-    //             <Spinner />
-    //         </Box>
-    //     );
-    // }
+    if (!isWhoAmIChecked) {
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    height: "100vh",
+                }}
+            >
+                <Spinner />
+            </Box>
+        );
+    }
 
     return (
         <Routes>
