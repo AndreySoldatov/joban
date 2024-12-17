@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface AuthState {
     displayName: string | null;
@@ -13,7 +13,7 @@ const initialState: AuthState = {
 };
 
 export const authSlice = createSlice({
-    name: 'authSlice',
+    name: "authSlice",
     initialState,
     reducers: {
         setUser: (
@@ -31,7 +31,10 @@ export const authSlice = createSlice({
             state.isAuth = false;
             state.isWhoAmIChecked = true;
         },
+        setIsWhoAmIChecked: (state) => {
+            state.isWhoAmIChecked = true;
+        },
     },
 });
 
-export const { setUser, resetUser } = authSlice.actions;
+export const { setUser, resetUser, setIsWhoAmIChecked } = authSlice.actions;

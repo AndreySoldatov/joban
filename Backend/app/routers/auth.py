@@ -15,7 +15,8 @@ router = APIRouter(prefix="/auth")
 
 
 class Cookies(RestRequestModel):
-    id_token: str = Field(validation_alias="DxpAccessToken")
+    id_token: str | None = Field(
+        validation_alias="DxpAccessToken", default=None)
 
 
 async def check_token(cookies: Annotated[Cookies, Cookie()], session: SessionDep):
@@ -61,8 +62,16 @@ async def whoami(session: SessionDep, cookies: Annotated[Cookies, Cookie()]) -> 
     Returns:
         dict: A dictionary with the key "display_name" containing the user's full name.
     """
+    if not cookies.id_token:
+        raise HTTPException(status_code=401, detail="Token not provided")
+
     token_record = session.exec(select(TokenStore).where(
         TokenStore.token == cookies.id_token)).first()
+
+    if not token_record:
+        raise HTTPException(
+            status_code=401, detail="Token is invalid or expired")
+
     db_user = session.exec(select(User).where(
         User.login == token_record.login)).first()
     return {"display_name": db_user.first_name + " " + db_user.last_name}
@@ -183,7 +192,7 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
     return {"display_name": db_user.first_name + " " + db_user.last_name}
 
 
-@router.get("/logout", status_code=200, dependencies=[Depends(check_token)])
+@router.post("/logout", status_code=200, dependencies=[Depends(check_token)])
 async def logout(cookies: Annotated[Cookies, Cookie()], response: Response, session: SessionDep):
     token_record = session.exec(select(TokenStore).where(
         TokenStore.token == cookies.id_token)).first()
