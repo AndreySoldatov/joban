@@ -5,6 +5,7 @@ on:
     branches: 
       - main
       - andrey
+      - release
 
 jobs:
   groom:
