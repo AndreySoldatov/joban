@@ -15,7 +15,8 @@ router = APIRouter(prefix="/auth")
 
 
 class Cookies(RestRequestModel):
-    id_token: str | None = Field(validation_alias="DxpAccessToken", default=None)
+    id_token: str | None = Field(
+        validation_alias="DxpAccessToken", default=None)
 
 
 async def check_token(cookies: Annotated[Cookies, Cookie()], session: SessionDep):
