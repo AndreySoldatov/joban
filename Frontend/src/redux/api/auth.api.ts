@@ -1,32 +1,32 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { interceptedBaseQuery } from './interceptedBaseQuery';
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { interceptedBaseQuery } from "./interceptedBaseQuery";
 
 export const authApi = createApi({
-    reducerPath: 'authApi',
+    reducerPath: "authApi",
     baseQuery: interceptedBaseQuery,
     endpoints: (builder) => ({
         registerUser: builder.mutation({
             query: (credentials) => ({
-                url: '/auth/register',
-                method: 'POST',
+                url: "/auth/register",
+                method: "POST",
                 body: credentials,
             }),
         }),
         loginUser: builder.mutation({
             query: (credentials) => ({
-                url: '/auth/login',
-                method: 'POST',
+                url: "/auth/login",
+                method: "POST",
                 body: credentials,
             }),
         }),
         logoutUser: builder.mutation<void, void>({
             query: () => ({
-                url: '/auth/logout',
-                method: 'POST',
+                url: "/auth/logout",
+                method: "POST",
             }),
         }),
-        whoAmI: builder.query({
-            query: () => '/auth/whoami',
+        whoAmI: builder.query<{ displayName: string }, void>({
+            query: () => "/auth/whoami",
         }),
     }),
 });
