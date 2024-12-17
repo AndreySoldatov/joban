@@ -145,8 +145,8 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
     """
     Authenticates a user and generates an access token.
 
-    This function verifies the user's credentials by comparing the provided password, salted and hashed, with the stored hash. 
-    If valid, it generates a unique access token, stores it in the database with an expiration time, and sets it as a cookie 
+    This function verifies the user's credentials by comparing the provided password, salted and hashed, with the stored hash.
+    If valid, it generates a unique access token, stores it in the database with an expiration time, and sets it as a cookie
     in the response.
 
     Args:
@@ -158,7 +158,7 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
         DisplayName: A dictionary with the key "display_name" containing the user's full name.
 
     Raises:
-        HTTPException: 
+        HTTPException:
             - If the user is not found, with status code 404.
             - If the password is incorrect, with status code 401.
     """

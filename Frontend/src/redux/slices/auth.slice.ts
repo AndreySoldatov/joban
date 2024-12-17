@@ -31,10 +31,7 @@ export const authSlice = createSlice({
             state.isAuth = false;
             state.isWhoAmIChecked = true;
         },
-        setIsWhoAmIChecked: (state) => {
-            state.isWhoAmIChecked = true;
-        },
     },
 });
 
-export const { setUser, resetUser, setIsWhoAmIChecked } = authSlice.actions;
+export const { setUser, resetUser } = authSlice.actions;
