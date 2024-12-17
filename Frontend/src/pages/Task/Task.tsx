@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
     TextField,
@@ -43,6 +43,13 @@ const Task: React.FC = () => {
     const [taskDescription, setTaskDescription] = useState<
         string | Promise<string>
     >("<p>Описание задачи</p>");
+
+    useEffect(() => {
+        if (taskDescription instanceof Promise) {
+            taskDescription.then(setTaskDescription);
+        }
+    }, [taskDescription]);
+
     const handleOpenEditTitle = () => setIsOpenEditTitle(true);
     const handleCloseEditTitle = () => setIsOpenEditTitle(false);
 
@@ -54,6 +61,9 @@ const Task: React.FC = () => {
     const handleCloseEditDescription = () => setIsOpenEditDescription(false);
 
     const onSubmitDescription = (data: any) => {
+        if (data.description === taskDescription) {
+            return;
+        }
         const html = marked.parse(data.description, { breaks: true });
         setTaskDescription(html);
         handleCloseEditDescription();
@@ -114,7 +124,7 @@ const Task: React.FC = () => {
                     <Button
                         color="primary"
                         onClick={() => {
-                            setTaskTitle(defaultValues.title);
+                            setTaskTitle(taskTitle);
                             handleCloseEditTitle();
                         }}
                     >

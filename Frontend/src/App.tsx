@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "./redux/store";
+import { AppDispatch, RootState } from "./redux/store";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { PrivateRoute } from "./utils/PrivateRoute";
 import Auth from "./pages/Auth/Auth";
@@ -8,11 +8,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import { useEffect, useState } from "react";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useWhoAmIQuery } from "./redux/api/auth.api";
-import {
-    resetUser,
-    setIsWhoAmIChecked,
-    setUser,
-} from "./redux/slices/auth.slice";
+import { resetUser, setUser } from "./redux/slices/auth.slice";
 import Register from "./pages/Auth/Register";
 import Layout from "./layout/Layout";
 import RedirectRoute from "./utils/RedirectRoute";
@@ -26,7 +22,7 @@ import { Box } from "@mui/material";
 type WhoAmIState = boolean | typeof skipToken;
 
 const App: React.FC = () => {
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
     const { isAuth, isWhoAmIChecked } = useSelector(
         (state: RootState) => state.authSlice
     );
@@ -42,17 +38,15 @@ const App: React.FC = () => {
     } = useWhoAmIQuery(whoAmI);
 
     useEffect(() => {
-        setState((prev) => ({ ...prev, whoAmI: true }));
+        setState({ ...state, whoAmI: true });
     }, []);
 
     useEffect(() => {
         if (isWhoAmIError) {
             dispatch(resetUser());
-            dispatch(setIsWhoAmIChecked());
         }
         if (isWhoAmISuccess) {
             dispatch(setUser(whoAmIData));
-            dispatch(setIsWhoAmIChecked());
         }
     }, [isWhoAmIError, isWhoAmISuccess]);
 
