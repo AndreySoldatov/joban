@@ -17,8 +17,13 @@ export const interceptedBaseQuery: BaseQueryFn<
 > = async (args, api, extraOptions) => {
     const response = await customBaseQuery(args, api, extraOptions);
 
-    if (response.error && response.error.status === 401) {
-        window.location.href = "/";
+    if (
+        response.error &&
+        response.error.status === 401 &&
+        window.location.pathname !== "/login" &&
+        window.location.pathname !== "/register"
+    ) {
+        window.location.href = "/login";
         return { error: { status: 401, data: "Unauthorized" } };
     }
 
