@@ -1,29 +1,7 @@
-from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlmodel.pool import StaticPool
+import hashlib
 import pytest
 
-from ..main import app
-from ..db import get_session
-
-import hashlib
-
-engine = engine = create_engine(
-    "sqlite://",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-SQLModel.metadata.create_all(engine)
-
-
-def get_session_override():
-    with Session(engine) as session:
-        return session
-
-
-app.dependency_overrides[get_session] = get_session_override
-client = TestClient(app)
-
+from .test_base import client
 
 @pytest.mark.dependency()
 def test_reg():
@@ -49,7 +27,6 @@ def test_reg():
                            "password": "1234"
                        })
     assert resp.status_code == 409
-
 
 @pytest.mark.dependency(depends=["test_reg"])
 def test_login():
@@ -89,6 +66,9 @@ def test_whoami():
         "/auth/whoami", cookies={"DxpAccessToken": login_resp.cookies.get("DxpAccessToken")})
     assert whoami_resp.json() == {"displayName": "robot bobot"}
 
+    whoami_resp = client.get("/auth/whoami")
+    assert whoami_resp.status_code == 401
+
 
 @pytest.mark.dependency(depends=["test_login"])
 def test_logout():
@@ -101,3 +81,4 @@ def test_logout():
     logout_resp = client.post(
         "/auth/logout", cookies={"DxpAccessToken": login_resp.cookies.get("DxpAccessToken")})
     assert logout_resp.text == '"logout"'
+
