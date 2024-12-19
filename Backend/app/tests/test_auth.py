@@ -3,6 +3,7 @@ import pytest
 
 from .test_base import client
 
+
 @pytest.mark.dependency()
 def test_reg():
     resp = client.post("/auth/register",
@@ -27,6 +28,7 @@ def test_reg():
                            "password": "1234"
                        })
     assert resp.status_code == 409
+
 
 @pytest.mark.dependency(depends=["test_reg"])
 def test_login():
@@ -81,4 +83,3 @@ def test_logout():
     logout_resp = client.post(
         "/auth/logout", cookies={"DxpAccessToken": login_resp.cookies.get("DxpAccessToken")})
     assert logout_resp.text == '"logout"'
-

@@ -2,6 +2,7 @@ import pytest
 
 from .test_base import client
 
+
 @pytest.mark.dependency()
 def test_api():
     resp = client.get("/")
