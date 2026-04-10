@@ -1,0 +1,118 @@
+name: Security SAST
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sast:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install Python scanners
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit semgrep
+
+      - name: Install frontend dependencies
+        working-directory: Frontend
+        run: |
+          npm ci
+          npm install --no-save eslint-plugin-security eslint-plugin-no-secrets
+
+      - name: Create reports directory
+        run: mkdir -p reports
+
+      - name: Run Bandit
+        run: |
+          bandit \
+            -r Backend/app \
+            -x Backend/app/tests \
+            -f json \
+            -o reports/bandit.json \
+            --exit-zero
+
+      - name: Run ESLint security scan
+        working-directory: Frontend
+        run: |
+          set +e
+          npx eslint \
+            --config eslint.security.config.js \
+            --format json \
+            --output-file ../reports/eslint.json \
+            "src/**/*.{ts,tsx}"
+          rc=$?
+          set -e
+          if [ "$rc" -gt 1 ]; then
+            exit "$rc"
+          fi
+
+      - name: Run Semgrep
+        run: |
+          semgrep scan \
+            --config p/default \
+            --config p/security-audit \
+            --json \
+            --output reports/semgrep.json \
+            --exclude '**/.venv/**' \
+            --exclude '**/node_modules/**' \
+            --exclude '**/.vite/**' \
+            --exclude '**/dist/**' \
+            --exclude '**/tests/**' \
+            Backend/app \
+            Frontend/src
+
+      - name: Upload SAST reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-reports
+          path: reports/
+          if-no-files-found: error
+
+  security_gate:
+    needs: sast
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download SAST reports
+        uses: actions/download-artifact@v4
+        with:
+          name: sast-reports
+          path: reports
+
+      - name: Evaluate findings
+        run: |
+          python scripts/security_gate.py \
+            --bandit reports/bandit.json \
+            --eslint reports/eslint.json \
+            --semgrep reports/semgrep.json
