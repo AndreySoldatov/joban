@@ -102,7 +102,7 @@ jobs:
         run: mkdir -p reports
 
       - name: Run Trivy backend dependency scan
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: fs
           scan-ref: Backend
@@ -113,7 +113,7 @@ jobs:
           exit-code: "0"
 
       - name: Run Trivy frontend dependency scan
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: fs
           scan-ref: Frontend
