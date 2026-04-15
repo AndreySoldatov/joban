@@ -1,0 +1,11 @@
+version: "1.0"
+metadata:
+  project: "joban"
+policy:
+  max_cvss_score: 7.0
+  auto_block_severities: ["CRITICAL"]
+  warn_severities: ["HIGH"]
+  remediation_deadline:
+    CRITICAL: 1
+    HIGH: 7
+    MEDIUM: 30

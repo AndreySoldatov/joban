@@ -1,2 +1,4 @@
 .venv-security/
 reports/
+sbom/
+trivy-reports/

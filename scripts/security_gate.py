@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 
 SEVERITY_ORDER = {
     "low": 1,
@@ -37,15 +39,28 @@ class Finding:
     path: str
     rule: str
     message: str
+    cvss_score: float | None = None
+    package: str | None = None
+    version: str | None = None
+    fixed_version: str | None = None
+
+
+@dataclass
+class SecurityPolicy:
+    max_cvss_score: float | None
+    auto_block_severities: set[str]
+    warn_severities: set[str]
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Fail the pipeline when SAST results contain high or critical issues."
+        description="Fail the pipeline when SAST/SCA results violate security policy."
     )
     parser.add_argument("--bandit", required=True, type=Path)
     parser.add_argument("--eslint", required=True, type=Path)
     parser.add_argument("--semgrep", required=True, type=Path)
+    parser.add_argument("--policy", required=True, type=Path)
+    parser.add_argument("--trivy", action="append", default=[], type=Path)
     return parser.parse_args()
 
 
@@ -54,6 +69,30 @@ def load_json(path: Path) -> Any:
         raise FileNotFoundError(f"Missing report: {path}")
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def load_policy(path: Path) -> SecurityPolicy:
+    if not path.exists():
+        raise FileNotFoundError(f"Missing security policy: {path}")
+
+    with path.open("r", encoding="utf-8") as handle:
+        payload = yaml.safe_load(handle) or {}
+
+    policy = payload.get("policy", {})
+    return SecurityPolicy(
+        max_cvss_score=(
+            float(policy["max_cvss_score"])
+            if policy.get("max_cvss_score") is not None
+            else None
+        ),
+        auto_block_severities={
+            str(value).strip().lower()
+            for value in policy.get("auto_block_severities", [])
+        },
+        warn_severities={
+            str(value).strip().lower() for value in policy.get("warn_severities", [])
+        },
+    )
 
 
 def normalize_severity(value: Any) -> str:
@@ -166,6 +205,45 @@ def semgrep_findings(payload: dict[str, Any]) -> list[Finding]:
     return findings
 
 
+def best_cvss_score(vulnerability: dict[str, Any]) -> float | None:
+    scores: list[float] = []
+    for source in (vulnerability.get("CVSS") or {}).values():
+        for key in ("V3Score", "V2Score"):
+            value = source.get(key)
+            if value is None:
+                continue
+            try:
+                scores.append(float(value))
+            except (TypeError, ValueError):
+                continue
+    return max(scores) if scores else None
+
+
+def trivy_findings(payload: dict[str, Any]) -> list[Finding]:
+    findings: list[Finding] = []
+    for result in payload.get("Results", []):
+        target = result.get("Target", "")
+        for vulnerability in result.get("Vulnerabilities") or []:
+            findings.append(
+                Finding(
+                    tool="trivy",
+                    severity=normalize_severity(vulnerability.get("Severity")),
+                    path=target,
+                    rule=vulnerability.get("VulnerabilityID", "trivy"),
+                    message=(
+                        vulnerability.get("Title")
+                        or vulnerability.get("Description")
+                        or ""
+                    ),
+                    cvss_score=best_cvss_score(vulnerability),
+                    package=vulnerability.get("PkgName"),
+                    version=vulnerability.get("InstalledVersion"),
+                    fixed_version=vulnerability.get("FixedVersion"),
+                )
+            )
+    return findings
+
+
 def summarize(findings: list[Finding]) -> dict[str, int]:
     counts = {key: 0 for key in SEVERITY_ORDER}
     for finding in findings:
@@ -173,36 +251,93 @@ def summarize(findings: list[Finding]) -> dict[str, int]:
     return counts
 
 
+def is_blocked(finding: Finding, policy: SecurityPolicy) -> bool:
+    if finding.tool != "trivy":
+        return SEVERITY_ORDER[finding.severity] >= SEVERITY_ORDER["high"]
+
+    if finding.severity in policy.auto_block_severities:
+        return True
+
+    if (
+        policy.max_cvss_score is not None
+        and finding.cvss_score is not None
+        and finding.cvss_score > policy.max_cvss_score
+    ):
+        return True
+
+    return False
+
+
+def is_warning(finding: Finding, policy: SecurityPolicy) -> bool:
+    return finding.tool == "trivy" and finding.severity in policy.warn_severities
+
+
+def format_finding(finding: Finding) -> str:
+    if finding.tool != "trivy":
+        return (
+            f"  [{finding.tool}] {finding.severity.upper()} {finding.rule} "
+            f"{finding.path}: {finding.message}"
+        )
+
+    package = finding.package or "unknown-package"
+    version = finding.version or "unknown-version"
+    fixed_version = finding.fixed_version or "-"
+    cvss = f"{finding.cvss_score:.1f}" if finding.cvss_score is not None else "-"
+    return (
+        f"  [trivy] {finding.severity.upper()} {package}@{version} "
+        f"{finding.rule} target={finding.path} cvss={cvss} fixed={fixed_version}: "
+        f"{finding.message}"
+    )
+
+
 def main() -> int:
     args = parse_args()
+    policy = load_policy(args.policy)
 
     findings = [
         *bandit_findings(load_json(args.bandit)),
         *eslint_findings(load_json(args.eslint)),
         *semgrep_findings(load_json(args.semgrep)),
+        *[
+            finding
+            for report in args.trivy
+            for finding in trivy_findings(load_json(report))
+        ],
     ]
 
     counts = summarize(findings)
-    blocked = [
-        finding
-        for finding in findings
-        if SEVERITY_ORDER[finding.severity] >= SEVERITY_ORDER["high"]
-    ]
+    blocked = [finding for finding in findings if is_blocked(finding, policy)]
+    warnings = [finding for finding in findings if is_warning(finding, policy)]
 
     print("Security scan summary:")
     for severity in ("critical", "high", "medium", "low"):
         print(f"  {severity}: {counts[severity]}")
 
+    if args.trivy:
+        policy_cvss = (
+            f"{policy.max_cvss_score:.1f}"
+            if policy.max_cvss_score is not None
+            else "disabled"
+        )
+        print("Trivy policy:")
+        print(
+            "  auto_block_severities: "
+            + ", ".join(sorted(policy.auto_block_severities))
+        )
+        print(f"  max_cvss_score: {policy_cvss}")
+
+    if warnings:
+        print("Security warnings:")
+        for finding in warnings:
+            print(format_finding(finding))
+
     if not blocked:
-        print("Security gate passed: no high or critical findings detected.")
+        print("Security gate passed: no blocking findings detected.")
         return 0
 
     print("Security gate failed. Blocking findings:")
     for finding in blocked:
-        print(
-            f"  [{finding.tool}] {finding.severity.upper()} {finding.rule} "
-            f"{finding.path}: {finding.message}"
-        )
+        print(format_finding(finding))
     return 1
 
 

@@ -91,8 +91,51 @@ jobs:
           path: reports/
           if-no-files-found: error
 
+  sca:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create reports directory
+        run: mkdir -p reports
+
+      - name: Run Trivy backend dependency scan
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: Backend
+          scanners: vuln
+          vuln-type: library
+          format: json
+          output: reports/trivy-backend-fs.json
+          exit-code: "0"
+
+      - name: Run Trivy frontend dependency scan
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: Frontend
+          scanners: vuln
+          vuln-type: library
+          format: json
+          output: reports/trivy-frontend-fs.json
+          exit-code: "0"
+          skip-setup-trivy: true
+
+      - name: Upload SCA reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sca-reports
+          path: reports/trivy-*.json
+          if-no-files-found: error
+
   security_gate:
-    needs: sast
+    needs:
+      - sast
+      - sca
     runs-on: ubuntu-latest
 
     steps:
@@ -104,10 +147,21 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install gate dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
       - name: Download SAST reports
         uses: actions/download-artifact@v4
         with:
           name: sast-reports
+          path: reports
+
+      - name: Download SCA reports
+        uses: actions/download-artifact@v4
+        with:
+          name: sca-reports
           path: reports
 
       - name: Evaluate findings
@@ -115,4 +169,7 @@ jobs:
           python scripts/security_gate.py \
             --bandit reports/bandit.json \
             --eslint reports/eslint.json \
-            --semgrep reports/semgrep.json
+            --semgrep reports/semgrep.json \
+            --policy security_policy.yaml \
+            --trivy reports/trivy-backend-fs.json \
+            --trivy reports/trivy-frontend-fs.json
