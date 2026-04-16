@@ -54,12 +54,13 @@ class SecurityPolicy:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Fail the pipeline when SAST/SCA results violate security policy."
+        description="Fail the pipeline when SAST/SCA/DAST results violate security policy."
     )
     parser.add_argument("--bandit", required=True, type=Path)
     parser.add_argument("--eslint", required=True, type=Path)
     parser.add_argument("--semgrep", required=True, type=Path)
     parser.add_argument("--policy", required=True, type=Path)
+    parser.add_argument("--zap", action="append", default=[], type=Path)
     parser.add_argument("--trivy", action="append", default=[], type=Path)
     return parser.parse_args()
 
@@ -244,6 +245,56 @@ def trivy_findings(payload: dict[str, Any]) -> list[Finding]:
     return findings
 
 
+def zap_alert_severity(alert: dict[str, Any]) -> str:
+    riskdesc = str(alert.get("riskdesc") or "").split("(", 1)[0].strip().lower()
+    if riskdesc:
+        return normalize_severity(riskdesc)
+
+    riskcode = str(alert.get("riskcode") or "").strip()
+    riskcode_map = {
+        "0": "low",
+        "1": "low",
+        "2": "medium",
+        "3": "high",
+        "4": "critical",
+    }
+    return riskcode_map.get(riskcode, "medium")
+
+
+def zap_findings(payload: dict[str, Any], tool: str) -> list[Finding]:
+    findings: list[Finding] = []
+    sites = payload.get("site") or []
+    if isinstance(sites, dict):
+        sites = [sites]
+
+    for site in sites:
+        site_name = site.get("@name", "")
+        alerts = site.get("alerts") or []
+        if isinstance(alerts, dict):
+            alerts = [alerts]
+
+        for alert in alerts:
+            instances = alert.get("instances") or []
+            if isinstance(instances, dict):
+                instances = [instances]
+
+            first_instance = instances[0] if instances else {}
+            path = first_instance.get("uri") or site_name
+            alert_name = alert.get("name") or alert.get("alert") or "zap"
+            count = alert.get("count") or str(len(instances) or 1)
+
+            findings.append(
+                Finding(
+                    tool=tool,
+                    severity=zap_alert_severity(alert),
+                    path=path,
+                    rule=alert.get("pluginid") or alert.get("alertRef") or "zap",
+                    message=f"{alert_name} (instances: {count})",
+                )
+            )
+    return findings
+
+
 def summarize(findings: list[Finding]) -> dict[str, int]:
     counts = {key: 0 for key in SEVERITY_ORDER}
     for finding in findings:
@@ -298,6 +349,11 @@ def main() -> int:
         *bandit_findings(load_json(args.bandit)),
         *eslint_findings(load_json(args.eslint)),
         *semgrep_findings(load_json(args.semgrep)),
+        *[
+            finding
+            for report in args.zap
+            for finding in zap_findings(load_json(report), report.stem)
+        ],
         *[
             finding
             for report in args.trivy
