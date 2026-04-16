@@ -105,6 +105,9 @@ async def register(user: UserRegisterRequest, session: SessionDep) -> User:
     Raises:
         HTTPException: If the user already exists, with status code 409.
     """
+    if not user.login.isalnum() or not user.password.isalnum():
+        raise HTTPException(detail="Username or password is not alphanumeric", status_code=400)
+
     check_user = session.exec(select(User).where(
         User.login == user.login)).first()
     if check_user:
@@ -162,6 +165,9 @@ async def login(user: UserLoginRequest, session: SessionDep, response: Response)
             - If the user is not found, with status code 404.
             - If the password is incorrect, with status code 401.
     """
+    if not user.login.isalnum() or not user.password.isalnum():
+        raise HTTPException(detail="Username or password is not alphanumeric", status_code=400)
+
     db_user = session.exec(select(User).where(
         User.login == user.login)).first()
     if not db_user:
