@@ -189,7 +189,6 @@ jobs:
           docker run --rm --network host -v "$PWD:/zap/wrk" \
             zaproxy/zap-stable zap-full-scan.py \
             -t "$ZAP_TARGET" \
-            -c gen.conf \
             -r reports/zap-full-report.html \
             -J reports/zap-full-report.json
           full_rc=$?
@@ -198,7 +197,6 @@ jobs:
             zaproxy/zap-stable zap-api-scan.py \
             -t "$ZAP_API_SPEC" \
             -f openapi \
-            -c gen.conf \
             -r reports/zap-api-report.html \
             -J reports/zap-api-report.json
           api_rc=$?
