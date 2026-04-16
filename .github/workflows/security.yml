@@ -42,7 +42,9 @@ jobs:
           npm install --no-save eslint-plugin-security eslint-plugin-no-secrets
 
       - name: Create reports directory
-        run: mkdir -p reports
+        run: |
+          mkdir -p reports
+          chmod 0777 reports
 
       - name: Run Bandit
         run: |
